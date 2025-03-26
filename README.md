@@ -1,2 +1,2 @@
 # csl
-Compilar de """", desenvolvido para a disciplina Compiladores 1
+Compilador de """", desenvolvido para a disciplina Compiladores 1
