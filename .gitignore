@@ -1,0 +1,7 @@
+# Ignora tudo que for gerado automaticamente
+build/
+
+# Ignora arquivos temporários
+*.swp
+*.swo
+*~
