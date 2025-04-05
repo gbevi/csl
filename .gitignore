@@ -1,7 +1,9 @@
-# Ignora tudo que for gerado automaticamente
-build/
+# Ignore everything in build/
+build/*
 
-# Ignora arquivos temporários
+# But keep the .gitkeep file
+!build/.gitkeep
+
 *.swp
 *.swo
 *~
