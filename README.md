@@ -22,12 +22,15 @@ This project is a simple compiler that translates a subset of Ruby into C using 
 ├── Makefile
 └── README.md
 ```
+## Tool Versions Used
 
-## Requirements
+This project was built and tested using the following tool versions:
 
-- Flex
-- Bison
-- Clang or GCC
+- **Clang**: 16.0.0 (clang-1600.0.26.6) or **GCC**
+- **Flex**: 2.6.4
+- **Bison**: 2.3
+
+> It's recommended to use the same or compatible versions to avoid unexpected issues during compilation.
 
 On macOS:
 
