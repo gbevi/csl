@@ -45,7 +45,7 @@ brew install flex bison
 1. Clone the repository:
 
 ```
-git clone https://github.com/your-username/csl.git
+git clone https://github.com/gbevi/csl.git
 cd csl
 ```
 
