@@ -49,19 +49,13 @@ git clone https://github.com/your-username/csl.git
 cd csl
 ```
 
-2. Create the hello.rb test file:
-
-```
-echo 'puts "Hello, World!\n"' > test/hello.rb
-```
-
-3. Build the compiler:
+2. Build the compiler:
 
 ```
 make
 ```
 
-4. Run the compiler with the Ruby file:
+3. Run the compiler with the Ruby file:
 
 ```
 make run
@@ -69,7 +63,7 @@ make run
 
 This generates the file `build/hello.c` containing the translated C code.
 
-5. Compile and run the generated C code:
+4. Compile and run the generated C code:
 
 ```
 clang build/hello.c -o build/hello
