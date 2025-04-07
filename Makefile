@@ -1,5 +1,5 @@
-# Compilador: clang
-CC = clang
+# Compilador
+CC := $(shell command -v clang || command -v gcc)
 FLEX = flex
 YACC = bison
 
