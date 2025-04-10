@@ -1,0 +1,7 @@
+site_name: Ruby to C Compiler
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
