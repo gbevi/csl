@@ -10,8 +10,10 @@
       
       
       
+        <link rel="next" href="Escopo/escopo/">
       
-      <link rel="icon" href="images/icon.png">
+      
+      <link rel="icon" href="assets/img/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
     
     
@@ -42,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="stylesheets/extra.css">
+      <link rel="stylesheet" href="assets/stylesheets/extra.css">
     
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -70,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#compilador-ruby-para-c" class="md-skip">
+        <a href="#apresentacao" class="md-skip">
           Pular para conteúdo
         </a>
       
@@ -88,7 +90,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
     <a href="." title="Ruby to C Compiler" class="md-header__button md-logo" aria-label="Ruby to C Compiler" data-md-component="logo">
       
-  <img src="images/favicon.png" alt="logo">
+  <img src="assets/img/icon.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -185,7 +187,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/gbevi/csl/tree/main" title="Ir para repositório" class="md-source" data-md-component="source">
+        <a href="https://github.com/gbevi/csl" title="Ir para repositório" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -223,14 +225,14 @@
   <label class="md-nav__title" for="__drawer">
     <a href="." title="Ruby to C Compiler" class="md-nav__button md-logo" aria-label="Ruby to C Compiler" data-md-component="logo">
       
-  <img src="images/favicon.png" alt="logo">
+  <img src="assets/img/icon.png" alt="logo">
 
     </a>
     Ruby to C Compiler
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/gbevi/csl/tree/main" title="Ir para repositório" class="md-source" data-md-component="source">
+      <a href="https://github.com/gbevi/csl" title="Ir para repositório" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -256,8 +258,19 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
         
@@ -271,6 +284,63 @@
 
       </a>
       
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#apresentacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      Apresentação 💡
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contribuidores" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contribuidores 👥
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Escopo/escopo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Escopo
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -292,8 +362,32 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#apresentacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      Apresentação 💡
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contribuidores" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contribuidores 👥
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -312,37 +406,31 @@
   
 
 
-<h1 id="compilador-ruby-para-c">Compilador Ruby para C</h1>
-<div style="text-align: center">
-<img self-align="center" src="images/icon.png">
-<figcaption>Figura 1: Apresentação do Compilador de C para Ruby</figcaption>
-</div>
-<p><br>
-Esta página é dedicada à documentação de todo o processo de pesquisa e desenvolvimento de um compilador de Ruby para C, produzido na disciplina de Compiladores 1 do Campus Gama da Universidade de Brasília (UnB) durante o 1º semestre de 2025.</p>
-<h1 id="grupo">Grupo</h1>
-<h2 id="contribuidores">👨‍💻 Contribuidores</h2>
+<h1 style="text-align:center; margin-bottom: -10px;">
+  <b><i>Ruby to C Compiler</i></b>
+</h1>
+
+<figure style="text-align: center;">
+  <img src="assets/img/favicon.png" style="max-width: 80%;">
+  <figcaption>
+    Figura 1: Apresentação do Compilador de C para Ruby
+  </figcaption>
+</figure>
+
+<h2 id="apresentacao">Apresentação 💡</h2>
+<p>Esta página é dedicada à documentação completa do processo de pesquisa e desenvolvimento de um compilador de Ruby para C, elaborado pelo Grupo 06 na disciplina de Compiladores 1, do Campus Gama da Universidade de Brasília, durante o primeiro semestre de 2025.</p>
+<h2 id="contribuidores">Contribuidores 👥</h2>
 <table>
-<thead>
-<tr>
-<th style="text-align: center;">Danilo</th>
-<th style="text-align: center;"><a href="https://github.com/danielle-soaress"><img alt="" src="https://avatars.githubusercontent.com/danielle-soaress" /></a></th>
-<th style="text-align: center;"><a href="https://github.com/gbevi"><img alt="" src="https://avatars.githubusercontent.com/gbevi" /></a></th>
-<th style="text-align: center;"><a href="https://github.com/Leticia-Arisa-K-Higa"><img alt="" src="https://avatars.githubusercontent.com/Leticia-Arisa-K-Higa" /></a></th>
-<th style="text-align: center;">Maria Eduarda</th>
-<th style="text-align: center;">Pedro Túlio</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">Danilo</td>
-<td style="text-align: center;"><a href="https://github.com/danielle-soaress">Danielle Soares</a></td>
-<td style="text-align: center;"><a href="https://github.com/gbevi">Gabriel Dantas</a></td>
-<td style="text-align: center;"><a href="https://github.com/Leticia-Arisa-K-Higa">Leticia Arisa</a></td>
-<td style="text-align: center;">Maria Eduarda</td>
-<td style="text-align: center;">Pedro Túlio</td>
-</tr>
-</tbody>
+  <tr>
+    <td align="center"><a href="https://github.com/danielle-soaress"><img style="border-radius: 60%;" src="https://github.com/danielle-soaress.png" width="200px;" alt=""/><br /><sub><b>Danielle Soares</b></sub></a><br />
+    <td align="center"><a href="https://github.com"><img style="border-radius: 60%;" src="" width="200px;" alt=""/><br /><sub><b>Danilo</b></sub></a><br />
+    <td align="center"><a href="https://github.com/gbevi"><img style="border-radius: 60%;" src="https://github.com/gbevi.png" width="200px;" alt=""/><br /><sub><b>Gabriel Dantas</b></sub></a><br />
+    <td align="center"><a href="https://github.com/Leticia-Arisa-K-Higa"><img style="border-radius: 60%;" src="https://github.com/Leticia-Arisa-K-Higa.png" width="200px;" alt=""/><br /><sub><b>Letícia Arisa</b></sub></a><br />
+    <td align="center"><a href="https://github.com/maaduh"><img style="border-radius: 60%;" src="https://github.com/maaduh.png" width="200px;" alt=""/><br /><sub><b>Maria Eduarda Araujo</b></sub></a><br />
+    <td align="center"><a href="https://github.com/PedrooCamilo"><img style="border-radius: 60%;" src="https://github.com/PedrooCamilo.png" width="200px;" alt=""/><br /><sub><b>Pedro Túlio</b></sub></a><br />
+  </tr>
 </table>
+<p><br></p>
 
 
 
