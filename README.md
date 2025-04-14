@@ -1,8 +1,8 @@
 # CSL – Ruby to C Compiler
 
-<figure style="text-align: center;">
-  <img src="docs/assets/img/favicon.png" style="max-width: 30%;">
-</figure>
+<p align="center">
+  <img src="docs/assets/img/favicon.png" style="max-width: 10%; display: block; margin: auto;" />
+</p>
 
 This project is a simple compiler that translates a subset of Ruby into C using **Flex** and **Bison**. 
 
