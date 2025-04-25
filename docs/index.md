@@ -18,7 +18,7 @@ Esta página é dedicada à documentação completa do processo de pesquisa e de
 <table>
   <tr>
     <td align="center"><a href="https://github.com/danielle-soaress"><img style="border-radius: 60%;" src="https://github.com/danielle-soaress.png" width="200px;" alt=""/><br /><sub><b>Danielle Soares</b></sub></a><br />
-    <td align="center"><a href="https://github.com"><img style="border-radius: 60%;" src="" width="200px;" alt=""/><br /><sub><b>Danilo</b></sub></a><br />
+    <td align="center"><a href="https://github.com/auslogyc"><img style="border-radius: 60%;" src="https://github.com/auslogyc.png" width="200px;" alt=""/><br /><sub><b>Danilo Barros</b></sub></a><br />
     <td align="center"><a href="https://github.com/gbevi"><img style="border-radius: 60%;" src="https://github.com/gbevi.png" width="200px;" alt=""/><br /><sub><b>Gabriel Dantas</b></sub></a><br />
     <td align="center"><a href="https://github.com/Leticia-Arisa-K-Higa"><img style="border-radius: 60%;" src="https://github.com/Leticia-Arisa-K-Higa.png" width="200px;" alt=""/><br /><sub><b>Letícia Arisa</b></sub></a><br />
     <td align="center"><a href="https://github.com/maaduh"><img style="border-radius: 60%;" src="https://github.com/maaduh.png" width="200px;" alt=""/><br /><sub><b>Maria Eduarda Araujo</b></sub></a><br />
