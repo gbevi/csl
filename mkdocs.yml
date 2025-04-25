@@ -46,6 +46,7 @@ extra_css: [assets/stylesheets/extra.css]
 
 nav:
   - Home: index.md
+  - Introdução: Introducao/Introducao.md
   - Planejamento:
-    - Espoco: Planejamento/Escopo.md
+    - Escopo: Planejamento/Escopo.md
     - Cronograma: Planejamento/Cronograma.md
