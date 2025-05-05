@@ -21,6 +21,15 @@ end             { return END; }
 def             { return DEF; }
 return          { return RETURN; }
 
+// tipos de dados
+int             { return INT_TYPE; }
+float           { return FLOAT_TYPE; }
+double          { return DOUBLE_TYPE; }
+char            { return CHAR_TYPE; }
+string          { return STRING_TYPE; }
+boolean         { return BOOLEAN_TYPE; }
+
+// strings
 \"[^\"]*\"      { yylval.str = strdup(yytext); return STRING; }
 
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return ID; }
@@ -43,8 +52,16 @@ return          { return RETURN; }
 "}"             { return RBRACE; }
 ","             { return COMMA; }
 
-[ \t\n]+        ; // ignora espaços e quebras de linha
-.               ; // ignora outros caracteres por enquanto
+// operadores lógicos
+"and"           { return AND; }
+"or"            { return OR; }
+"not"           { return NOT; }
+
+// ignora espaços e quebras de linha
+[ \t\n]+        ;
+
+// ignora outros caracteres por enquanto
+.               ; 
 
 %%
 
