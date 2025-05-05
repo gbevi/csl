@@ -57,11 +57,21 @@ boolean         { return BOOLEAN_TYPE; }
 "or"            { return OR; }
 "not"           { return NOT; }
 
+// comentários de linha única
+"#" {}
+
+// comentários de bloco
+"=begin" {BEGIN_COMMENT = 1;}
+"=end" {BEGIN_COMMENT = 0;}
+
+. {if (BEGIN_COMMENT) {return COMMENT;}} // para ignorar caracteres dentro dos comentários
+
 // ignora espaços e quebras de linha
 [ \t\n]+        ;
 
 // ignora outros caracteres por enquanto
 .               ; 
+
 
 %%
 
