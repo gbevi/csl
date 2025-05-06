@@ -34,18 +34,27 @@ boolean         { return BOOLEAN_TYPE; }
 
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return ID; }
 
+// operadores relacionais
 "=="            { return EQ; }
 "!="            { return NEQ; }
 "<="            { return LE; }
 ">="            { return GE; }
 "<"             { return LT; }
 ">"             { return GT; }
+
+// atribuição
 "="             { return ASSIGN; }
+
+// operadores aritméticos
 "+"             { return PLUS; }
 "-"             { return MINUS; }
 "*"             { return MULTIPLY; }
 "/"             { return DIVIDE; }
+
+// intervalo (range)
 ".."            { return RANGE; }
+
+// parênteses chaves e vírgulas
 "("             { return LPAREN; }
 ")"             { return RPAREN; }
 "{"             { return LBRACE; }
