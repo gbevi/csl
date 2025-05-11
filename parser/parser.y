@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "ST/tabela.h"
 
 void yyerror(const char *s);
 int yylex(void);
