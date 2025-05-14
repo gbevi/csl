@@ -32,10 +32,11 @@ boolean         { return BOOLEAN_TYPE; }
 // strings
 \"[^\"]*\"      { yylval.str = strdup(yytext); return STRING; }
 
+// identificadores válidos
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return ID; }
 
-[0-9]+[a-zA-Z_][a-zA-Z0-9_]* {
-    printf("Identificador inválido (%s)\n", yytext);}
+// identificadores inválidos
+[0-9]+[a-zA-Z_][a-zA-Z0-9_]* {printf("Identificador inválido (%s)\n", yytext);}
 
 // operadores relacionais
 "=="            { return EQ; }
