@@ -34,6 +34,9 @@ boolean         { return BOOLEAN_TYPE; }
 
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return ID; }
 
+[0-9]+[a-zA-Z_][a-zA-Z0-9_]* {
+    printf("Identificador inválido (%s)\n", yytext);}
+
 // operadores relacionais
 "=="            { return EQ; }
 "!="            { return NEQ; }
@@ -79,7 +82,8 @@ boolean         { return BOOLEAN_TYPE; }
 [ \t\n]+        ;
 
 // ignora outros caracteres por enquanto
-.               ; 
+. { printf("Caractere inválido '%s'\n", yytext);}
+
 
 
 %%
