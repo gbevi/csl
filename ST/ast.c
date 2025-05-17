@@ -75,3 +75,7 @@ char* gerarTAC(NoAST *no) {
     free(dir);
     return tmp;
 }
+
+int tiposCompativeis(Tipo t1, Tipo t2) {
+    return t1 == t2;
+}
