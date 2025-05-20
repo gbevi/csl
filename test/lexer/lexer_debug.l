@@ -44,17 +44,27 @@
 #define AND 39
 #define OR 40
 #define NOT 41
+#define NUM 42
+#define EOL 43
 
 typedef union {
     char *str;
-    int num;
+    int valor;
 } YYSTYPE;
 
 YYSTYPE yylval;
 
 %}
 
+%x COMMENT_BLOCK
+
 %%
+
+"=begin"[ \t]*[\r]?\n       { printf("TOKEN: BLOCK_COMMENT_START\n"); BEGIN(COMMENT_BLOCK); }
+<COMMENT_BLOCK>"=end"[ \t]*[\r]?\n   { printf("TOKEN: BLOCK_COMMENT_END\n"); BEGIN(INITIAL); }
+<COMMENT_BLOCK>.|\n    ; 
+
+"#".*     { printf("TOKEN: SIMPLE_COMMENT\n"); } ; 
 
 puts        { printf("TOKEN: PUTS\n"); return PUTS; }
 print       { printf("TOKEN: PRINT\n"); return PRINT; }
@@ -76,6 +86,12 @@ double      { printf("TOKEN: DOUBLE_TYPE\n"); return DOUBLE_TYPE; }
 char        { printf("TOKEN: CHAR_TYPE\n"); return CHAR_TYPE; }
 string      { printf("TOKEN: STRING_TYPE\n"); return STRING_TYPE; }
 boolean     { printf("TOKEN: BOOLEAN_TYPE\n"); return BOOLEAN_TYPE; }
+
+"and"       { printf("TOKEN: AND\n"); return AND; }
+"or"        { printf("TOKEN: OR\n"); return OR; }
+"not"       { printf("TOKEN: NOT\n"); return NOT; }
+
+[0-9]+    { yylval.valor = atoi(yytext); return NUM; }
 
 \"[^\"]*\"  { yylval.str = strdup(yytext); printf("TOKEN: STRING (%s)\n", yytext); return STRING; }
 
@@ -103,13 +119,11 @@ boolean     { printf("TOKEN: BOOLEAN_TYPE\n"); return BOOLEAN_TYPE; }
 "}"         { printf("TOKEN: RBRACE\n"); return RBRACE; }
 ","         { printf("TOKEN: COMMA\n"); return COMMA; }
 
-"and"       { printf("TOKEN: AND\n"); return AND; }
-"or"        { printf("TOKEN: OR\n"); return OR; }
-"not"       { printf("TOKEN: NOT\n"); return NOT; }
+\n              { return EOL; }
 
-[ \t\n]+    ;
+[ \t\r\n]+  ; 
 
-.           { printf("TOKEN DESCONHECIDO: %s\n", yytext); }
+.                    { printf("TOKEN DESCONHECIDO: %s\n", yytext); }
 
 %%
 

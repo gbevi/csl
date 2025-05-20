@@ -4,7 +4,15 @@
 #include <string.h>
 %}
 
+%x COMMENT_BLOCK
+
 %%
+
+"=begin"[ \t]*[\r]?\n       {BEGIN(COMMENT_BLOCK); }
+<COMMENT_BLOCK>"=end"[ \t]*[\r]?\n   {BEGIN(INITIAL); }
+<COMMENT_BLOCK>.|\n    ; 
+
+"#".*     {} ; 
 
 puts            { return PUTS; }
 print           { return PRINT; }
@@ -31,6 +39,8 @@ boolean         { return BOOLEAN_TYPE; }
 "and"           { return AND; }
 "or"            { return OR; }
 "not"           { return NOT; }
+
+[0-9]+    { yylval.valor = atoi(yytext); return NUM; }
 
 \"[^\"]*\"      { yylval.str = strdup(yytext); return STRING; }
 
@@ -60,18 +70,11 @@ boolean         { return BOOLEAN_TYPE; }
 "}"             { return RBRACE; }
 ","             { return COMMA; }
 
-"#" {}
-
-"=begin" {BEGIN_COMMENT = 1;}
-"=end" {BEGIN_COMMENT = 0;}
-
-. {if (BEGIN_COMMENT) {return COMMENT;}}
+\n              { return EOL; }
 
 [ \t\n]+        ;
 
 . { printf("Caractere inválido '%s'\n", yytext);}
-
-
 
 %%
 
