@@ -29,18 +29,17 @@ end             { return END; }
 def             { return DEF; }
 return          { return RETURN; }
 
-int             { return INT_TYPE; }
-float           { return FLOAT_TYPE; }
-double          { return DOUBLE_TYPE; }
-char            { return CHAR_TYPE; }
-string          { return STRING_TYPE; }
-boolean         { return BOOLEAN_TYPE; }
-
 "and"           { return AND; }
 "or"            { return OR; }
 "not"           { return NOT; }
 
-[0-9]+    { yylval.valor = atoi(yytext); return NUM; }
+[0-9]+\.[0-9]+    { yylval.str = strdup(yytext); return FLOAT_LITERAL; }
+[0-9]+            { yylval.str = strdup(yytext); return INT_LITERAL; }
+
+"true"   { yylval.str = strdup("true"); return BOOL_LITERAL; }
+"false"  { yylval.str = strdup("false"); return BOOL_LITERAL; }
+
+'\''[a-zA-Z0-9]'\''    { yylval.str = strdup(yytext); return CHAR_LITERAL; }
 
 \"[^\"]*\"      { yylval.str = strdup(yytext); return STRING; }
 

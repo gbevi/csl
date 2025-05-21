@@ -17,12 +17,13 @@ NoAST *raiz;
 }
 
 %token <str> STRING ID
-%token <valor> NUM
+%token <valor> INT_LITERAL
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE
 %token LPAREN RPAREN LBRACE RBRACE COMMA
 %token INT_TYPE FLOAT_TYPE DOUBLE_TYPE CHAR_TYPE STRING_TYPE BOOLEAN_TYPE
+%token <str> FLOAT_LITERAL BOOL_LITERAL CHAR_LITERAL
 %token AND OR NOT
 
 %token EOL 
@@ -90,7 +91,7 @@ bloco:
     ;
 
 expr:
-    NUM             { $$ = criarNoNum($1); }
+    INT_LITERAL            { $$ = criarNoNum($1); }
     | STRING        { $$ = criarNoId($1, TIPO_STRING); }
     | ID            { $$ = criarNoId($1, TIPO_INT); }
 
