@@ -1,14 +1,19 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "ST/tabela.h"
-#include "ST/ast.h"
+#include "../ST/tabela.h"
+#include "../ST/ast.h"
+
+int tem_erro = 0;
 
 void yyerror(const char *s);
 int yylex(void);
 NoAST *raiz;
-
 %}
+
+%code requires {
+    typedef struct NoAST NoAST;
+}
 
 %union {
     char *str;
@@ -17,7 +22,7 @@ NoAST *raiz;
 }
 
 %token <str> STRING ID
-%token <valor> INT_LITERAL
+%token <valor> NUM
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE
@@ -48,41 +53,41 @@ program:
 
 statements:
     stmt                        { $$ = $1; }
-    | statements stmt           { $$ = criarNoOp(';', $1, $2); }
+    | statements stmt           { $$ = criarNoOp(OP_SEQ, $1, $2); }
     ;
 
 stmt:
     func_call EOL               { $$ = $1; }
     | func_call_bloco EOL       { $$ = $1; }
     | expr EOL                  { $$ = $1; }
-    | PRINT expr EOL            { $$ = criarNoOp('p', $2, NULL); }
-    | PUTS  expr EOL            { $$ = criarNoOp('p', $2, NULL); }
-    | RETURN expr EOL           { $$ = criarNoOp('r', $2, NULL); }
-    | GETS  LPAREN RPAREN EOL   { $$ = criarNoOp('g', NULL, NULL); }
-    | IF expr bloco END         { $$ = criarNoOp('i', $2, $3); }
-    | WHILE expr bloco END      { $$ = criarNoOp('w', $2, $3); }
+    | PRINT expr EOL            { $$ = criarNoOp(OP_PRINT, $2, NULL); }
+    | PUTS  expr EOL            { $$ = criarNoOp(OP_PUTS, $2, NULL); }
+    | RETURN expr EOL           { $$ = criarNoOp(OP_RETURN, $2, NULL); }
+    | GETS  LPAREN RPAREN EOL   { $$ = criarNoOp(OP_GETS, NULL, NULL); }
+    | IF expr bloco END         { $$ = criarNoOp(OP_IF, $2, $3); }
+    | WHILE expr bloco END      { $$ = criarNoOp(OP_WHILE, $2, $3); }
     
-    | IF expr bloco endif       { $$ = criarNoOp('i', $2, $3); }
-    | WHILE expr bloco END EOL  { $$ = criarNoOp('w', $2, $3); }
+    | IF expr bloco endif       { $$ = criarNoOp(OP_IF, $2, $3); }
+    | WHILE expr bloco END EOL  { $$ = criarNoOp(OP_WHILE, $2, $3); }
     | FOR ID IN expr DO bloco END EOL
                                   {
                                       NoAST *iter = criarNoId($2, TIPO_INT);
-                                      NoAST *cab  = criarNoOp('f', iter, $4);
-                                      $$ = criarNoOp('F', cab, $6);
+                                      NoAST *cab  = criarNoOp(OP_FOR, iter, $4);
+                                      $$ = criarNoOp(OP_SEQ, cab, $6);
                                   }
     | DEF ID LPAREN param_list RPAREN bloco END EOL
                                   {
                                       NoAST *nome = criarNoId($2, TIPO_INT);
                                       NoAST *params = $4; 
                                       NoAST *corpo  = $6;
-                                      $$ = criarNoOp('d', criarNoOp(',', nome, params), corpo);
+                                      $$ = criarNoOp(OP_DEF, criarNoOp(OP_SEQ, nome, params), corpo);
                                   }
     ;
 
 endif: 
     END EOL                 { $$ = NULL; }              
-    | ELSE bloco END EOL      { $$ = criarNoOp('e', $2, NULL); }
-    | ELSIF expr bloco endif  { $$ = criarNoOp('l', $2, criarNoOp('b', $3, $4)); }
+    | ELSE bloco END EOL      { $$ = criarNoOp(OP_ELSE, $2, NULL); }
+    | ELSIF expr bloco endif  { $$ = criarNoOp(OP_ELSIF, $2, criarNoOp(OP_SEQ, $3, $4)); }
     ;
 
 bloco:
@@ -91,53 +96,55 @@ bloco:
     ;
 
 expr:
-    INT_LITERAL            { $$ = criarNoNum($1); }
+    NUM             { $$ = criarNoNum($1); }
     | STRING        { $$ = criarNoId($1, TIPO_STRING); }
     | ID            { $$ = criarNoId($1, TIPO_INT); }
 
-    | expr PLUS expr { $$ = criarNoOp('+', $1, $3); }
-    | expr MINUS expr  { $$ = criarNoOp('-', $1, $3); }
-    | expr MULTIPLY expr { $$ = criarNoOp('*', $1, $3); }
-    | expr DIVIDE expr  { $$ = criarNoOp('/', $1, $3); }
+    | expr PLUS expr { $$ = criarNoOp(OP_SOMA, $1, $3); }
+    | expr MINUS expr  { $$ = criarNoOp(OP_SUB, $1, $3); }
+    | expr MULTIPLY expr { $$ = criarNoOp(OP_MULT, $1, $3); }
+    | expr DIVIDE expr  { $$ = criarNoOp(OP_DIV, $1, $3); }
 
-    | expr EQ expr   { $$ = criarNoOp('==', $1, $3); }
-    | expr NEQ expr  { $$ = criarNoOp('n', $1, $3); }
-    | expr LT expr   { $$ = criarNoOp('<', $1, $3); }
-    | expr GT expr   { $$ = criarNoOp('>', $1, $3); }
-    | expr LE expr   { $$ = criarNoOp('l', $1, $3); }
-    | expr GE expr   { $$ = criarNoOp('g', $1, $3); }
+    | expr EQ expr   { $$ = criarNoOp(OP_EQ, $1, $3); }
+    | expr NEQ expr  { $$ = criarNoOp(OP_NEQ, $1, $3); }
+    | expr LT expr   { $$ = criarNoOp(OP_LT, $1, $3); }
+    | expr GT expr   { $$ = criarNoOp(OP_GT, $1, $3); }
+    | expr LE expr   { $$ = criarNoOp(OP_LE, $1, $3); }
+    | expr GE expr   { $$ = criarNoOp(OP_GE, $1, $3); }
 
-    | expr AND expr  { $$ = criarNoOp('&', $1, $3); }
-    | expr OR  expr  { $$ = criarNoOp('|', $1, $3); }
-    | NOT expr  %prec UMINUS  { $$ = criarNoOp('!', $2, NULL); }
+    | expr AND expr  { $$ = criarNoOp(OP_AND, $1, $3); }
+    | expr OR  expr  { $$ = criarNoOp(OP_OR, $1, $3); }
+    | NOT expr  %prec UMINUS  { $$ = criarNoOp(OP_NOT, $2, NULL); }
 
-    | ID ASSIGN expr          { $$ = criarNoOp('=', criarNoId($1, TIPO_INT), $3); }
+    | ID ASSIGN expr          { $$ = criarNoOp(OP_ASSIGN, criarNoId($1, TIPO_INT), $3); }
 
     | LPAREN expr RPAREN      { $$ = $2; }
     ;
 
 func_call_bloco:
-    ID LPAREN arg_list RPAREN DO bloco END    { $$ = criarNoOp('C', criarNoId($1, TIPO_INT), $6); }
+    ID LPAREN arg_list RPAREN DO bloco END    { $$ = criarNoOp(OP_FUNC_CALL_BLOCK, criarNoId($1, TIPO_INT), $6); }
     ;
 
 func_call:
-    ID LPAREN arg_list RPAREN        { $$ = criarNoOp('c', criarNoId($1, TIPO_INT), $3); }
+    ID LPAREN arg_list RPAREN        { $$ = criarNoOp(OP_FUNC_CALL, criarNoId($1, TIPO_INT), $3); }
     ;
 
 param_list:
     ID                      { $$ = criarNoId($1, TIPO_INT); }
-    | param_list COMMA ID   { $$ = criarNoOp(',', $1, criarNoId($3, TIPO_INT)); }
+    | param_list COMMA ID   { $$ = criarNoOp(OP_SEQ, $1, criarNoId($3, TIPO_INT)); }
     ;
 
 arg_list:
     expr                    { $$ = $1; }
-    | arg_list COMMA expr   { $$ = criarNoOp(',', $1, $3); }
+    | arg_list COMMA expr   { $$ = criarNoOp(OP_SEQ, $1, $3); }
     |                       { $$ = NULL; }
     ;
 
 %%
 
-extern int yylieno;
+extern int yylineno;
+
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro na linha %d: %s\n", yylieno, s);
+    fprintf(stderr, "Erro na linha %d: %s\n", yylineno, s);
+    tem_erro = 1;
 }

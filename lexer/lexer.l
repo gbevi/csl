@@ -1,8 +1,11 @@
+
 %{
 #include "parser.tab.h"
 #include <stdio.h>
 #include <string.h>
 %}
+
+%option yylineno
 
 %x COMMENT_BLOCK
 
@@ -34,7 +37,7 @@ return          { return RETURN; }
 "not"           { return NOT; }
 
 [0-9]+\.[0-9]+    { yylval.str = strdup(yytext); return FLOAT_LITERAL; }
-[0-9]+            { yylval.str = strdup(yytext); return INT_LITERAL; }
+[0-9]+            { yylval.valor = atoi(yytext); return NUM; }
 
 "true"   { yylval.str = strdup("true"); return BOOL_LITERAL; }
 "false"  { yylval.str = strdup("false"); return BOOL_LITERAL; }
@@ -80,3 +83,4 @@ return          { return RETURN; }
 int yywrap(void) {
     return 1;
 }
+

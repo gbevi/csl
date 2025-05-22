@@ -1,0 +1,14 @@
+x = 6
+x + y
+y - z
+x / y
+a == b
+x != y
+x > y
+x >= y
+y <= x
+y < y
+a or b
+(x + 2) * 3
+c and not b
+(1 + y) * (c - 4)

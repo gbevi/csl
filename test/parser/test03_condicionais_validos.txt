@@ -1,0 +1,19 @@
+if x < 5
+  y = 10
+end
+if x == 1
+  y = 1
+else
+  y = 2
+end
+if x == 1
+  y = 1
+elsif x <= 2
+  y = 2
+elsif x >= 6
+  y = 4
+elsif x > 3
+  y = 8
+elsif x 
+  y = 3
+end

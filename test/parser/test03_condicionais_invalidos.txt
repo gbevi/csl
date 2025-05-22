@@ -1,0 +1,26 @@
+if x < 5
+  y = 10
+# ❌ faltou 'end'
+
+x if == 1
+  y = 1
+else
+  y = 2
+# ❌ faltou 'end'
+
+if x == 1
+  y = 1
+<= elsif x  2
+  y = 2
+elsif 
+  y = 4
+end
+# ❌ faltou condição no elsif
+
+if x == 1
+  y = 1
+elsif x > 2
+  y = 2
+else
+# ❌ else sem corpo
+end

@@ -1,0 +1,17 @@
+def ()
+  puts "oi"
+end
+
+def soma(a b)
+  return a + b
+
+def x(
+  return 1
+
+x () def
+  return 1
+
+soma(4, )
+soma)5, 6)
+
+x(

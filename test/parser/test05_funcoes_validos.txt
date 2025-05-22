@@ -1,0 +1,8 @@
+def ola()
+  puts "Oi"
+end
+def soma(a, b)
+  return a + b
+end
+ola()
+soma(2, 4)

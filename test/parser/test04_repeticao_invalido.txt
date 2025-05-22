@@ -1,0 +1,23 @@
+while x < 10
+  x = x + 1
+
+for i in 
+do
+  puts i
+end
+
+for i in 1
+  puts i
+end
+
+x < while 10
+  x = x + 1
+
+i in for
+do
+  puts i
+end
+
+i for 1
+  puts i
+end
