@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../ST/tabela.h"
 #include "../ST/ast.h"
 
@@ -12,13 +13,14 @@ NoAST *raiz;
 %}
 
 %code requires {
-    typedef struct NoAST NoAST;
+#include "../ST/ast.h"
 }
 
 %union {
     char *str;
     int valor;
     NoAST *no;
+    Parametro *param;
 }
 
 %token <str> STRING ID
@@ -41,8 +43,8 @@ NoAST *raiz;
 %right NOT UMINUS
 %right ASSIGN
 
-
-%type <no> program statements expr stmt bloco arg_list param_list func_call_bloco func_call endif
+%type <param> param_list param_list_non_empty
+%type <no> program statements expr stmt bloco arg_list func_call endif
 
 %%
 
@@ -58,12 +60,11 @@ statements:
 
 stmt:
     func_call EOL               { $$ = $1; }
-    | func_call_bloco EOL       { $$ = $1; }
     | expr EOL                  { $$ = $1; }
-    | PRINT expr EOL            { $$ = criarNoOp(OP_PRINT, $2, NULL); }
-    | PUTS  expr EOL            { $$ = criarNoOp(OP_PUTS, $2, NULL); }
+    | PRINT expr EOL            { $$ = criarNoPrint($2); }
+    | PUTS  expr EOL            { $$ = criarNoPuts($2); }
     | RETURN expr EOL           { $$ = criarNoOp(OP_RETURN, $2, NULL); }
-    | GETS  LPAREN RPAREN EOL   { $$ = criarNoOp(OP_GETS, NULL, NULL); }
+    | GETS ID EOL              { $$ = criarNoGets($2); }
     | IF expr bloco END         { $$ = criarNoOp(OP_IF, $2, $3); }
     | WHILE expr bloco END      { $$ = criarNoOp(OP_WHILE, $2, $3); }
     
@@ -77,10 +78,7 @@ stmt:
                                   }
     | DEF ID LPAREN param_list RPAREN bloco END EOL
                                   {
-                                      NoAST *nome = criarNoId($2, TIPO_INT);
-                                      NoAST *params = $4; 
-                                      NoAST *corpo  = $6;
-                                      $$ = criarNoOp(OP_DEF, criarNoOp(OP_SEQ, nome, params), corpo);
+                                      $$ = criarNoDef($2, $4, $6);
                                   }
     ;
 
@@ -116,22 +114,40 @@ expr:
     | LPAREN expr RPAREN      { $$ = $2; }
     ;
 
-func_call_no_args:
-    DEF ID 
 
-
-func_call_bloco:
-    DEF ID LPAREN arg_list RPAREN bloco END    { $$ = criarNoOp(OP_FUNC_CALL_BLOCK, criarNoId($1, TIPO_INT), $6); }
-    ;
 
 func_call:
     ID LPAREN arg_list RPAREN        { $$ = criarNoOp(OP_FUNC_CALL, criarNoId($1, TIPO_INT), $3); }
     ;
 
 param_list:
-    ID                      { $$ = criarNoId($1, TIPO_INT); }
-    | param_list COMMA ID   { $$ = criarNoOp(OP_SEQ, $1, criarNoId($3, TIPO_INT)); }
-    ;
+    /* lista vazia */
+    { $$ = NULL; }
+  | param_list_non_empty
+    { $$ = $1; }
+;
+
+param_list_non_empty:
+    ID
+    {
+        Parametro *p = malloc(sizeof(Parametro));
+        strcpy(p->nome, $1);
+        p->prox = NULL;
+        $$ = p;
+    }
+  | param_list_non_empty COMMA ID
+    {
+        Parametro *p = malloc(sizeof(Parametro));
+        strcpy(p->nome, $3);
+        p->prox = NULL;
+
+        Parametro *iter = $1;
+        while(iter->prox) iter = iter->prox;
+        iter->prox = p;
+
+        $$ = $1;
+    }
+;
 
 arg_list:
     expr                    { $$ = $1; }

@@ -1,4 +1,1 @@
-puts "Hello"
-print "World"
-return x
-gets()
+puts "hello"

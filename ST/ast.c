@@ -15,6 +15,16 @@ NoAST *criarNoNum(int val) {
     return no;
 }
 
+NoAST *criarNoString(int val) {
+    NoAST *no = malloc(sizeof(NoAST));
+    no->valor = val;
+    no->nome[0] = '\0';
+    no->operador = 0;
+    no->esquerda = no->direita = NULL;
+    no->tipo = TIPO_STRING;
+    return no;
+}
+
 NoAST *criarNoId(char *nome, Tipo tipo) {
     NoAST *no = malloc(sizeof(NoAST));
     strcpy(no->nome, nome);
@@ -33,6 +43,45 @@ NoAST *criarNoOp(Operador op, NoAST *esq, NoAST *dir) {
     no->valor = 0;
     no->nome[0] = '\0';
     no->tipo = TIPO_INT;
+    return no;
+}
+
+NoAST *criarNoDef(char *nomeFuncao, Parametro *parametros, NoAST *corpo) {
+    NoAST *no = malloc(sizeof(NoAST));
+    no->operador = OP_DEF;
+    strcpy(no->nome, nomeFuncao);
+    no->parametros = parametros;
+    no->corpo = corpo;
+    no->esquerda = no->direita = NULL;
+    return no;
+}
+
+NoAST *criarNoPrint(NoAST *arg) {
+    NoAST *no = malloc(sizeof(NoAST));
+    no->operador = OP_PRINT;
+    no->esquerda = arg;
+    no->direita = NULL;
+    no->nome[0] = '\0';
+    no->tipo = TIPO_STRING;
+    return no;
+}
+
+NoAST *criarNoPuts(NoAST *arg) {
+    NoAST *no = malloc(sizeof(NoAST));
+    no->operador = OP_PUTS;
+    no->esquerda = arg;
+    no->direita = NULL;
+    no->nome[0] = '\0';
+    no->tipo = TIPO_STRING;
+    return no;
+}
+
+NoAST *criarNoGets(char *nomeVar) {
+    NoAST *no = malloc(sizeof(NoAST));
+    no->operador = OP_GETS;
+    strcpy(no->nome, nomeVar);
+    no->esquerda = no->direita = NULL;
+    no->tipo = TIPO_STRING;
     return no;
 }
 
@@ -132,10 +181,15 @@ void imprimirAST(NoAST *no) {
                 break;
 
             case OP_DEF:
-                printf("def ");
-                imprimirAST(no->esquerda);
-                printf(" ");
-                imprimirAST(no->direita);
+                printf("def %s(", no->nome);
+                for (Parametro *p = no->parametros; p; p = p->prox)
+                {
+                    printf("%s", p->nome);
+                    if (p->prox) printf(", ");
+                }
+                printf(")\n");
+                imprimirAST(no->corpo);
+                printf("end\n");
                 break;
 
             case OP_FUNC_CALL:
@@ -182,12 +236,58 @@ char* gerarTAC(NoAST *no) {
         return tmp;
     }
 
+    switch (no->operador)
+    {
+        case OP_DEF: {
+            printf("\ndef %s(", no->nome);
+            for (Parametro *p = no->parametros; p; p = p->prox)
+            {
+                printf("%s", p->nome);
+                if (p->prox) printf(", ");
+            }
+            printf(") {\n");
+            gerarTAC(no->corpo);
+            printf("}\n");
+            return NULL;
+        }
+
+        case OP_RETURN: {
+            char *valor = gerarTAC(no->esquerda);
+            printf("return %s\n", valor);
+            free(valor);
+            return NULL;
+        }
+
+        case OP_PRINT: {
+            char *arg = gerarTAC(no->esquerda);
+            printf("printf(\"%%s\", %s);\n", arg);
+            free(arg);
+            return NULL;
+        }
+
+        case OP_PUTS: {
+            char *arg = gerarTAC(no->esquerda);
+            printf("printf(\"%%s\\n\", %s);\n", arg);
+            free(arg);
+            return NULL;
+        }
+
+        case OP_GETS: {
+            printf("fgets(%s, 100, stdin);\n", no->nome);
+            printf("if ((p = strchr(%s, '\\n')) != NULL) *p = '\\0';\n", no->nome);
+            return NULL;
+        }
+
+        default: break;
+    }
+
     char *esq = gerarTAC(no->esquerda);
     char *dir = gerarTAC(no->direita);
     char *tmp = novaTemp();
 
     char op[4];
     switch (no->operador) {
+
         case OP_SOMA: strcpy(op, "+"); break;
         case OP_SUB: strcpy(op, "-"); break;
         case OP_MULT: strcpy(op, "*"); break;

@@ -1,6 +1,0 @@
-executa() do
-  puts "rodando"
-end
-foo(1) do
-  puts 2
-end

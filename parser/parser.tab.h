@@ -45,11 +45,12 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 14 "parser/parser.y"
+#line 15 "parser/parser.y"
 
     typedef struct NoAST NoAST;
+    typedef struct Parametro Parametro;
 
-#line 53 "parser/parser.tab.h"
+#line 54 "parser/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -115,13 +116,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 18 "parser/parser.y"
+#line 20 "parser/parser.y"
 
     char *str;
     int valor;
     NoAST *no;
+    Parametro *param;
 
-#line 125 "parser/parser.tab.h"
+#line 127 "parser/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

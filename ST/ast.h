@@ -36,18 +36,33 @@ typedef enum {
     OP_ERR
 } Operador;
 
+typedef struct Parametro
+{
+    char nome[32];
+    struct Parametro *prox;
+    
+} Parametro;
+
+
 typedef struct NoAST {
     Operador operador;
     int valor;
     char nome[32];
+    char valor_str[128];
     Tipo tipo;
     struct NoAST *esquerda;
     struct NoAST *direita;
+    Parametro *parametros;
+    struct NoAST *corpo;
 } NoAST;
 
 NoAST *criarNoNum(int val);
 NoAST *criarNoId(char *nome, Tipo tipo);
 NoAST *criarNoOp(Operador op, NoAST *esq, NoAST *dir);
+NoAST *criarNoDef(char *nomeFuncao, Parametro *parametros, NoAST *corpo);
+NoAST *criarNoPrint(NoAST *arg);
+NoAST *criarNoPuts(NoAST *arg);
+NoAST *criarNoGets(char *nomeVar);
 void imprimirAST(NoAST *no);
 int tiposCompativeis(Tipo t1, Tipo t2);
 char* gerarTAC(NoAST *no);
