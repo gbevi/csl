@@ -99,30 +99,29 @@ expr:
     NUM             { $$ = criarNoNum($1); }
     | STRING        { $$ = criarNoId($1, TIPO_STRING); }
     | ID            { $$ = criarNoId($1, TIPO_INT); }
-
     | expr PLUS expr { $$ = criarNoOp(OP_SOMA, $1, $3); }
     | expr MINUS expr  { $$ = criarNoOp(OP_SUB, $1, $3); }
     | expr MULTIPLY expr { $$ = criarNoOp(OP_MULT, $1, $3); }
     | expr DIVIDE expr  { $$ = criarNoOp(OP_DIV, $1, $3); }
-
     | expr EQ expr   { $$ = criarNoOp(OP_EQ, $1, $3); }
     | expr NEQ expr  { $$ = criarNoOp(OP_NEQ, $1, $3); }
     | expr LT expr   { $$ = criarNoOp(OP_LT, $1, $3); }
     | expr GT expr   { $$ = criarNoOp(OP_GT, $1, $3); }
     | expr LE expr   { $$ = criarNoOp(OP_LE, $1, $3); }
     | expr GE expr   { $$ = criarNoOp(OP_GE, $1, $3); }
-
     | expr AND expr  { $$ = criarNoOp(OP_AND, $1, $3); }
     | expr OR  expr  { $$ = criarNoOp(OP_OR, $1, $3); }
     | NOT expr  %prec UMINUS  { $$ = criarNoOp(OP_NOT, $2, NULL); }
-
     | ID ASSIGN expr          { $$ = criarNoOp(OP_ASSIGN, criarNoId($1, TIPO_INT), $3); }
-
     | LPAREN expr RPAREN      { $$ = $2; }
     ;
 
+func_call_no_args:
+    DEF ID 
+
+
 func_call_bloco:
-    ID LPAREN arg_list RPAREN DO bloco END    { $$ = criarNoOp(OP_FUNC_CALL_BLOCK, criarNoId($1, TIPO_INT), $6); }
+    DEF ID LPAREN arg_list RPAREN bloco END    { $$ = criarNoOp(OP_FUNC_CALL_BLOCK, criarNoId($1, TIPO_INT), $6); }
     ;
 
 func_call:
