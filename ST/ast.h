@@ -66,6 +66,7 @@ NoAST *criarNoGets(char *nomeVar);
 void imprimirAST(NoAST *no);
 int tiposCompativeis(Tipo t1, Tipo t2);
 char* gerarTAC(NoAST *no);
+Tipo verificarSemantica(NoAST *no);
 
 
 #endif

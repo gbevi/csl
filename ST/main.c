@@ -19,6 +19,17 @@ int main() {
 
     printf("Código TAC gerado:\n");
     gerarTAC(atrib);
+    
+    printf("Verificando semântica...\n");
+    Tipo tipo = verificarSemantica(atrib);
+
+    if (tipo != TIPO_ERRO) {
+        printf("Semântica válida.\n");
+        printf("Código TAC:\n");
+        gerarTAC(atrib);
+    } else {
+        printf("Erro semântico detectado.\n");
+    }
 
     return 0;
 }
