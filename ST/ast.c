@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ast.h"
+#include "tabela.h"
+
 
 static int temp_id = 0;
 
@@ -313,3 +315,93 @@ char* gerarTAC(NoAST *no) {
 int tiposCompativeis(Tipo t1, Tipo t2) {
     return t1 == t2;
 }
+
+Tipo verificarSemantica(NoAST *no) {
+    if (!no) return TIPO_ERRO;
+
+    // Caso folha (literal ou identificador)
+    if (!no->esquerda && !no->direita) {
+        if (strlen(no->nome) > 0) {
+            // É identificador
+            Simbolo *s = buscarSimbolo(no->nome);
+            if (!s) {
+                printf("Erro: variável '%s' não declarada\n", no->nome);
+                return TIPO_ERRO;
+            }
+            if (strcmp(s->tipo, "int") == 0) return TIPO_INT;
+            if (strcmp(s->tipo, "float") == 0) return TIPO_FLOAT;
+            if (strcmp(s->tipo, "double") == 0) return TIPO_DOUBLE;
+            if (strcmp(s->tipo, "char") == 0) return TIPO_CHAR;
+            if (strcmp(s->tipo, "string") == 0) return TIPO_STRING;
+            if (strcmp(s->tipo, "boolean") == 0) return TIPO_BOOLEAN;
+            return TIPO_ERRO;
+        } else {
+            // É literal (número, string etc)
+            return no->tipo;
+        }
+    }
+
+    // A partir daqui, é operador com filhos
+    switch (no->operador) {
+        case OP_ASSIGN: {
+            Tipo tipo_esq = verificarSemantica(no->esquerda);
+            Tipo tipo_dir = verificarSemantica(no->direita);
+
+            if (tipo_esq == TIPO_ERRO || tipo_dir == TIPO_ERRO)
+                return TIPO_ERRO;
+
+            if (!tiposCompativeis(tipo_esq, tipo_dir)) {
+                printf("Erro: tipos incompatíveis na atribuição para '%s'\n", no->esquerda->nome);
+                return TIPO_ERRO;
+            }
+
+            return tipo_esq;
+        }
+
+        case OP_SOMA: case OP_SUB: case OP_MULT: case OP_DIV:
+        case OP_EQ: case OP_NEQ: case OP_LT: case OP_GT:
+        case OP_LE: case OP_GE: case OP_AND: case OP_OR: {
+            Tipo t1 = verificarSemantica(no->esquerda);
+            Tipo t2 = verificarSemantica(no->direita);
+            if (!tiposCompativeis(t1, t2)) {
+                printf("Erro: tipos incompatíveis no operador\n");
+                return TIPO_ERRO;
+            }
+            return t1;
+        }
+
+        case OP_PRINT:
+        case OP_PUTS:
+        case OP_RETURN: {
+            return verificarSemantica(no->esquerda);
+        }
+
+        case OP_IF:
+        case OP_WHILE:
+        case OP_FOR: {
+            Tipo cond = verificarSemantica(no->esquerda);
+            Tipo bloco = verificarSemantica(no->direita);
+            if (cond == TIPO_ERRO || bloco == TIPO_ERRO)
+                return TIPO_ERRO;
+            return TIPO_BOOLEAN;
+        }
+
+        case OP_SEQ: {
+            verificarSemantica(no->esquerda);
+            return verificarSemantica(no->direita);
+        }
+
+        case OP_DEF: {
+            for (Parametro *p = no->parametros; p; p = p->prox) {
+                if (!buscarSimbolo(p->nome)) {
+                    inserirSimbolo(p->nome, "int");
+                }
+            }
+            return verificarSemantica(no->corpo);
+        }
+
+        default:
+            return TIPO_ERRO;
+    }
+}
+
