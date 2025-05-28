@@ -118,6 +118,7 @@ void imprimirAST(NoAST *no) {
                     case OP_ASSIGN:    printf(" = "); break;
                     case OP_SEQ:       printf(" ; "); break;
                     case OP_COMMA:     printf(" , "); break;
+                    default:           printf(" ? "); break; 
                 }
                 imprimirAST(no->direita);
                 printf(")");
