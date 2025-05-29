@@ -43,6 +43,8 @@ typedef struct Parametro
     
 } Parametro;
 
+char* novoLabel();
+char* novaTemp();
 
 typedef struct NoAST {
     Operador operador;

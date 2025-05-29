@@ -7,6 +7,15 @@
 
 static int temp_id = 0;
 
+int contadorLabel = 0;
+
+char* novoLabel() {
+    char *label = malloc(10);
+    sprintf(label, "L%d", contadorLabel++);
+    return label;
+}
+int contadorTemp = 0;
+
 NoAST *criarNoNum(int val) {
     NoAST *no = malloc(sizeof(NoAST));
     no->valor = val;
@@ -279,6 +288,28 @@ char* gerarTAC(NoAST *no) {
             printf("fgets(%s, 100, stdin);\n", no->nome);
             printf("if ((p = strchr(%s, '\\n')) != NULL) *p = '\\0';\n", no->nome);
             return NULL;
+        }
+
+        case OP_WHILE: {
+        char *labelInicio = novoLabel();
+        char *labelFim = novoLabel();
+
+        printf("%s:\n", labelInicio);
+
+        char *cond = gerarTAC(no->esquerda); // condição
+        printf("ifFalse %s goto %s\n", cond, labelFim);
+
+        gerarTAC(no->direita); // corpo do while
+
+        printf("goto %s\n", labelInicio);
+        printf("%s:\n", labelFim);
+
+        return NULL;
+    }
+    case OP_SEQ: {
+            gerarTAC(no->esquerda);
+            gerarTAC(no->direita);
+            return NULL; // Importante para não cair no processamento binário
         }
 
         default: break;
