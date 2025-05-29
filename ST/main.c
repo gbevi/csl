@@ -13,9 +13,10 @@ int main() {
     NoAST *c = criarNoId("c", TIPO_INT);
     NoAST *x = criarNoId("x", TIPO_INT);
 
-    NoAST *mult = criarNoOp('*', b, c);
-    NoAST *soma = criarNoOp('+', a, mult);
-    NoAST *atrib = criarNoOp('=', x, soma);
+    NoAST *mult = criarNoOp(OP_MULT, b, c);
+    NoAST *soma = criarNoOp(OP_SOMA, a, mult);
+    NoAST *atrib = criarNoOp(OP_ASSIGN, x, soma);
+
 
     printf("Código TAC gerado:\n");
     gerarTAC(atrib);
