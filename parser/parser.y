@@ -17,10 +17,13 @@ NoAST *raiz;
 }
 
 %union {
-    char *str;
-    int valor;
-    NoAST *no;
-    Parametro *param;
+    char char_val;
+    int int_val;
+    double double_val;
+    char* str_val;
+
+    list_t* symtab_item;
+    NoAST* node;
 }
 
 %token <str> STRING ID
