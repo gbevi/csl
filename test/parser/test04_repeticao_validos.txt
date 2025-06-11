@@ -1,7 +1,3 @@
-while x < 10
-  x = x + 1
-end
-for i in 1
-do
-  puts i
-end
+for item in 0..5 do
+  puts(item)
+ends
