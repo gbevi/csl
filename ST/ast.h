@@ -1,46 +1,68 @@
+#ifndef  AST_H
+#define  AST_H
+
+typedef enum {
+    TIPO_INT,
+    TIPO_FLOAT,
+    TIPO_DOUBLE,
+    TIPO_CHAR,
+    TIPO_STRING,
+    TIPO_BOOLEAN,
+    TIPO_UNKNOWN, // inferencia de tipo
+    TIPO_VOID, // pra funções void
+    TIPO_INVALIDO // pra erros e valores invalidos
+} DataType;
 
 typedef enum Node_Type {
+    // nós básicos
     BASIC_NODE,
-    DECL_NODE,
+    ID_NODE,
     CONST_NODE,
+
+    // operações
+    ASSIGN_NODE, // =
+    ARITHM_NODE, // + - * /
+    LOGIC_OP_NODE, // and or not
+    REL_OP_NODE, // já inclui == != < > <= >=
+
+    // estruturas de controle
     IF_NODE,
     ELSIF_NODE,
+    ELSE_NODE,
     FOR_NODE,
+    FOR_IN_NODE,
+    RANGE_NODE, // pro for com 'do'
     WHILE_NODE,
-    ASSIGN_NODE,
-    SIMPLE_NODE,
-    INCR_NODE,
-    FUNC_CALL,
-    ARITHM_NODE,
-    BOOL_NODE,
-    REL_NODE,
-    EQU_NODE,
-    FUNC_DECL,
+    FUNC_CALL_NODE,
+    EXPR_LIST_NODE,
+    FUNC_DEF_NODE,
     RETURN_NODE,
+    DECL_NODE // caso decidamos fazer variáveis tipadas
 }Node_Type;
 
 typedef enum Arithm_op{
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    INC,
-    DEC,
+    OP_ADICAO,
+    OP_SUBTRACAO,
+    OP_MULTIPLICACAO, 
+    OP_DIVISAO
 } Arithm_op;
 
 typedef enum Bool_op{
-    OR,
-    AND,
-    NOT,
+    OP_OR,
+    OP_AND,
+    OP_NOT,
 }Bool_op;
 
 typedef enum Rel_op{
-    GREATER,
-    LESS,
-    GREATER_EQ,
-    LESS_EQ,
+    OP_REL_EQ,  // == 
+    OP_REL_NEQ, // !=
+    OP_REL_LT,  // <
+    OP_REL_GT,  // >
+    OP_REL_LE,  // <=
+    OP_REL_GE   // >=
 }Rel_op;
 
+// REMOVER DPS
 typedef enum Equal_op{
     EQUAL,
     NOT_EQUAL,
@@ -54,39 +76,43 @@ typedef union Value{
 }Value;
 
 typedef struct NoAST {
-    enum Node_Type type;
+    Node_Type type;
     struct NoAST *esquerda;
     struct NoAST *direita;
+    void *data; // ponteiro genérico para a struct específica do nó
 } NoAST;
 
 typedef struct NoAST_Decl{
-    enum Node_Type type;
+    Node_Type type;
     int dateType;
-    list_t** names;
+    Simbolo** names;
 }NoAST_Decl;
 
 typedef struct NoAST_Const{
-    enum Node_Type type;
-    int const_type;
+    Node_Type type;
+    DataType const_type;
     Value val;
 }NoAST_Const;
 
+typedef struct NoAST_Id {
+    Node_Type type; 
+    char *name;
+    void *entry;
+} NoAST_Id;
+
 typedef struct NoAST_if{
-    enum Node_Type type;
+    Node_Type type;
 
     struct NoAST *condition;
 
     struct NoAST *if_branch;
 
-    struct NoAST **elsif_branchs;
+    struct NoAST *next_branch;
 
-    struct NoAST *else_branch;
-
-    int elseif_count;
 }NoAST_if;
 
 typedef struct NoAST_elsif{
-    enum Node_Type type;
+    Node_Type type;
 
     struct NoAST *condition;
 
@@ -94,7 +120,7 @@ typedef struct NoAST_elsif{
 }NoAST_elsif;
 
 typedef struct NoAST_for{
-    enum Node_Type type;
+    Node_Type type;
 
     struct NoAST *initialize;
 
@@ -105,32 +131,44 @@ typedef struct NoAST_for{
     struct NoAST *for_branch;
 }NoAST_for;
 
+typedef struct NoAST_ForIn {
+    Node_Type type; 
+    NoAST *iterator_id; 
+    NoAST *collection_expr; 
+    NoAST *body; 
+} NoAST_ForIn;
+
+typedef struct NoAST_Range {
+    Node_Type type;
+    struct NoAST *start;
+    struct NoAST *end;
+    int exclusive; // 0 para .., 1 para ...
+} NoAST_Range;
+
 typedef struct NoAST_while{
-    enum Node_Type type;
+    Node_Type type;
 
     struct NoAST *condition;
 
     struct NoAST *while_branch;
 }NoAST_while;
 
-typedef struct NoAST_assign{
-    enum Node_Type type;
-
-    list_t *entry;
-
-    struct NoAST *assign_val;
-}NoAST_assign;
+typedef struct NoAST_Assign{
+    Node_Type type;
+    void *target_entry; // void pra evitar dependencia circular
+    struct NoAST *value_expr;
+}NoAST_Assign;
 
 typedef struct NoAST_simple{
-    enum Node_Type type;
+    Node_Type type;
 
     int statement_type;
 }NoAST_simple;
 
 typedef struct NoAST_incr{
-	enum Node_Type type;
+	Node_Type type;
 
-	list_t *entry;
+	Simbolo *entry;
 
 	int incr_type; 
 
@@ -138,58 +176,68 @@ typedef struct NoAST_incr{
 }NoAST_incr;
 
 typedef struct NoAST_Func_Call{
-	enum Node_Type type; 
-	list_t *entry;
+	Node_Type type; 
+	Simbolo *entry;
 
-	NoAST **params;	
-    int num_of_pars;
+	struct NoAST *args;	
 }NoAST_Func_Call;
 
+typedef struct NoExprList {
+    Node_Type tipo_no; 
+    struct NoAST *expr; 
+    struct NoAST *next; 
+}No_Expr_List;
+
+typedef struct NoAST_FuncDef {
+    Node_Type type; 
+    Simbolo *func_entry;
+    Parametro *params_list; 
+    NoAST *body;
+} NoAST_FuncDef;
+
 typedef struct NoAST_Arithm{
-	enum Node_Type type; 
-
-	enum Arithm_op op;
-
+	Node_Type type; 
+	Arithm_op op;
 	struct NoAST *esquerda;  
 	struct NoAST *direita;
 }NoAST_Arithm;
 
-typedef struct NoAST_Bool{
-	enum Node_Type type; 
-	enum Bool_op op;
+typedef struct NoAST_Logic{
+	Node_Type type; 
+	Bool_op op;
 
 	struct NoAST *esquerda;  
 	struct NoAST *direita; 
-}NoAST_Bool;
+}NoAST_Logic;
 
 typedef struct NoAST_Rel{
-	enum Node_Type type;
+	Node_Type type;
 
-	enum Rel_op op;
+	Rel_op op;
 
 	struct NoAST *esquerda; 
 	struct NoAST *direita; 
 }NoAST_Rel;
 
 typedef struct NoAST_Equ{
-	enum Node_Type type; 
+	Node_Type type; 
 
-	enum Equal_op op;
+	Equal_op op;
 
 	struct NoAST *esquerda; 
 	struct NoAST *direita; 
 }NoAST_Equ;
 
 typedef struct NoAST_Func_Decl{
-	enum Node_Type type; 
+	Node_Type type; 
 
 	int ret_type;
 
-	list_t *entry;
+	Simbolo *entry;
 }NoAST_Func_Decl;
 
 typedef struct NoAST_Return{
-	enum Node_Type type; 
+	Node_Type type; 
 
 	int ret_type;
 
@@ -200,36 +248,49 @@ typedef struct NoAST_Return{
 
 NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita);
 
-NoAST *criarNoDecl(int dataType, list_t **names);
+NoAST *criarNoDecl(int dataType, Simbolo **names);
 
-NoAST *criarNoConst(int const_type, Value val);
+NoAST *criarNoConst(DataType const_type, Value val);
 
-NoAST *criarNoIf(NoAST *condition, NoAST *if_branch, NoAST **elseif_branchs, int elseif_count, NoAST *elseif_branch);
+NoAST *criarNoId(char *name, void *entry); 
 
-NoAST *criarNoElsif(NoAST *condition, NoAST *elsif_branch);
+NoAST *criarNoIfElseChain(Node_Type type, NoAST *condition, NoAST *branch_block, NoAST *next_branch);
 
 NoAST *criarNoFor(NoAST *initialize, NoAST *condition, NoAST *increment, NoAST *for_branch);
 
+NoAST *criarNoForIn(NoAST *iterator_id, NoAST *collection_expr, NoAST *body);
+
+NoAST *criarNoRange(NoAST *start_expr, NoAST *end_expr, int exclusive);
+
 NoAST *criarNoWhile(NoAST *condition, NoAST *while_brach);
 
-NoAST *criarNoAssign(list_t *entry, NoAST *assign_val);
+NoAST *criarNoAssign(void *target_entry, NoAST *value_expr);
 
 NoAST *criarNoSimple(int statement_type);
 
-NoAST *criarNoIncr(list_t *entry, int incr_type, int pf_type);
+NoAST *criarNoIncr(Simbolo *entry, int incr_type, int pf_type);
 
-NoAST *criarNoFuncCall(list_t *entry, NoAST **params, int num_of_pars);
+NoAST *criarNoFuncDef(Simbolo *symbol_entry, Parametro *parameters, NoAST *body);
 
-NoAST *criarNoArithm(enum Arithm_op op, NoAST *esquerda, NoAST *direita);
+NoAST* criarNoFuncCall(Simbolo *entry, NoAST *args_list);
 
-NoAST *criarNoBool(enum Bool_op op, NoAST *esquerda, NoAST *direita);
+NoAST* criarNoExprList(NoAST *expr, NoAST *next_expr_list);
 
-NoAST *criarNoRel(enum Rel_op op, NoAST *esquerda, NoAST *direita);
+NoAST *criarNoArithm(Arithm_op op, NoAST *esquerda, NoAST *direita);
 
-NoAST *criarNoEque(enum Equal_op op, NoAST *esquerda, NoAST *direita);
+NoAST *criarNoLogic(Bool_op op, NoAST *esquerda, NoAST *direita);
 
-NoAST *criarNoFuncDecl(int ret_type, list_t *entry);
+NoAST *criarNoRel(Rel_op op, NoAST *esquerda, NoAST *direita);
+
+NoAST *criarNoEque(Equal_op op, NoAST *esquerda, NoAST *direita);
+
+NoAST *criarNoFuncDecl(int ret_type, Simbolo *entry);
 
 NoAST *criarNoReturn(int ret_type, NoAST *ret_val);
 
-void imprimirAST(NoAST *no);
+void imprimirAST(NoAST *node, int indent);
+
+NoAST** convert_sequence_to_array(NoAST *sequence_node, int *count);
+
+
+#endif

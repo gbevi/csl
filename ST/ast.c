@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ast.h"
 #include "tabela.h"
-
+#include "ast.h"
 
 NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita){
     NoAST *v = malloc (sizeof(NoAST));
@@ -11,11 +10,11 @@ NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita){
     v->type = type;
     v->esquerda = esquerda;
     v->direita = direita;
-
+	v->data = NULL;
     return v;
 }
 
-NoAST *criarNoDecl(int dataType, list_t **names){
+NoAST *criarNoDecl(int dataType, Simbolo **names){
     NoAST_Decl *v = malloc(sizeof(NoAST_Decl));
 
     v->dateType = dataType;
@@ -25,39 +24,61 @@ NoAST *criarNoDecl(int dataType, list_t **names){
     return (struct NoAST *) v;
 }
 
-NoAST *criarNoConst(int const_type, Value val){
+NoAST *criarNoConst(DataType const_type, Value val){
     NoAST_Const *v = malloc(sizeof(NoAST_Const));
 
     v->type = CONST_NODE;
     v->const_type = const_type;
     v->val = val;
 
-    return (struct NoAST*) v;
+	if (const_type == TIPO_STRING && val.valstring != NULL) {
+        v->val.valstring = strdup(val.valstring);
+    }
+
+    NoAST *node = criarNo(CONST_NODE, NULL, NULL);
+    node->data = v;
+    return node;
+}
+
+NoAST *criarNoId(char *name, void *entry) {
+    NoAST_Id *id_node = malloc(sizeof(NoAST_Id));
+
+    id_node->type = ID_NODE;
+    id_node->name = strdup(name); 
+    id_node->entry = entry;
+
+    NoAST *node = criarNo(ID_NODE, NULL, NULL);
+    node->data = id_node;
+    return node;
 }
 
 
-NoAST *criarNoIf(NoAST *condition, NoAST *if_branch, NoAST **elseif_branchs, int elseif_count, NoAST *elseif_branch) {
-    NoAST_if *v = mallox(sizeof(NoAST_if));
+NoAST *criarNoIfElseChain(Node_Type type, NoAST *condition, NoAST *branch_block, NoAST *next_branch) {
+    NoAST *base_node = criarNo(type, NULL, NULL); 
 
-    v->type = IF_NODE;
-    v->condition = condition;
-    v->if_branch = if_branch;
-    v->elsif_branchs = elseif_branchs;
-    v->elseif_count = elseif_count;
-    v->else_branch;
+    NoAST_if *v = malloc(sizeof(NoAST_if));
 
-    return (struct NoAST *) v;
+    v->type = type;
+    v->condition = condition; 
+    v->if_branch = branch_block;
+    v->next_branch = next_branch;
 
+    base_node->data = v; 
+    return base_node;
 }
 
-NoAST *criarNoElsif(NoAST *condition, NoAST *elsif_branch) {
+NoAST *criarNoElsifCompleto(NoAST *condition, NoAST *elsif_branch) {
+    NoAST *base_node = criarNo(ELSIF_NODE, NULL, NULL);
+
     NoAST_elsif *v = malloc(sizeof(NoAST_elsif));
 
     v->type = ELSIF_NODE;
     v->condition = condition;
     v->elsif_branch = elsif_branch;
 
-    return (struct NoAST *) v;
+    base_node->data = v;
+
+    return base_node;
 }
 
 NoAST *criarNoFor(NoAST *initialize, NoAST *condition, NoAST *increment, NoAST *for_branch) {
@@ -65,11 +86,40 @@ NoAST *criarNoFor(NoAST *initialize, NoAST *condition, NoAST *increment, NoAST *
 
     v->type = FOR_NODE;
     v->initialize = initialize;
+    v->condition = condition;
     v->increment = increment;
     v->for_branch = for_branch;
 
-    return (struct NoAST *) v;
+    NoAST *base_node = criarNo(FOR_NODE, NULL, NULL);
+    base_node->data = v;
+    return base_node;
 }
+
+NoAST *criarNoForIn(NoAST *iterator_id, NoAST *collection_expr, NoAST *body) {
+    NoAST_ForIn *v = malloc(sizeof(NoAST_ForIn));
+    v->type = FOR_IN_NODE;
+    v->iterator_id = iterator_id;
+    v->collection_expr = collection_expr;
+    v->body = body;
+
+    NoAST *base_node = criarNo(FOR_IN_NODE, NULL, NULL);
+    base_node->data = v;
+    return base_node;
+}
+
+NoAST *criarNoRange(NoAST *start_expr, NoAST *end_expr, int exclusive) {
+    NoAST_Range *range_data = malloc(sizeof(NoAST_Range));
+
+    range_data->type = RANGE_NODE;
+    range_data->start = start_expr;
+    range_data->end = end_expr;
+    range_data->exclusive = exclusive;
+
+    NoAST *base_node = criarNo(RANGE_NODE, NULL, NULL);
+    base_node->data = range_data;
+    return base_node;
+}
+
 
 NoAST *criarNoWhile(NoAST *condition, NoAST *while_brach) {
     NoAST_while *v = malloc(sizeof(NoAST_while));
@@ -78,19 +128,28 @@ NoAST *criarNoWhile(NoAST *condition, NoAST *while_brach) {
     v->condition = condition;
     v->while_branch = while_brach;
 
-    return (struct NoAST *) v;
+    NoAST *base_node = criarNo(WHILE_NODE, NULL, NULL);
+    base_node->data = v;
+
+    return base_node;
 }
 
-NoAST *criarNoAssign(list_t *entry, NoAST *assign_val) {
-    NoAST_assign *v = malloc(sizeof(NoAST_assign));
+NoAST *criarNoAssign(void *target_entry, NoAST *value_expr) {
+    NoAST_Assign *assign_node = malloc(sizeof(NoAST_Assign));
 
-    v->type = ASSIGN_NODE;
-    v->entry = entry;
-    v->assign_val = assign_val;
+    assign_node->type = ASSIGN_NODE;
+    assign_node->target_entry = target_entry;
+    assign_node->value_expr = value_expr;
 
-    return (struct NoAST *) v;
+    NoAST *node = malloc(sizeof(NoAST));
+    node->type = ASSIGN_NODE;
+    node->esquerda = NULL;
+    node->direita = NULL;
+    node->data = assign_node;
+    return node;
 }
 
+/*
 NoAST *criarNoSimple(int statement_type) {
     NoAST_simple *v = malloc (sizeof(NoAST_simple));
 
@@ -100,7 +159,7 @@ NoAST *criarNoSimple(int statement_type) {
     return (struct NoAST *) v;
 }
 
-NoAST *criarNoIncr(list_t *entry, int incr_type, int pf_type) {
+NoAST *criarNoIncr(Simbolo *entry, int incr_type, int pf_type) {
     NoAST_incr *v = malloc (sizeof(NoAST_incr));
 
     v->type = INCR_NODE;
@@ -109,51 +168,202 @@ NoAST *criarNoIncr(list_t *entry, int incr_type, int pf_type) {
     v->pf_type = pf_type;
 
     return (struct NoAST *) v;
-}
+}*/
 
-NoAST *criarNoFuncCall(list_t *entry, NoAST **params, int num_of_pars) {
+NoAST *criarNoFuncCall(Simbolo *entry, NoAST *args_list) {
     NoAST_Func_Call *v = malloc (sizeof(NoAST_Func_Call));
 
-    v->type = FUNC_CALL;
+    v->type = FUNC_CALL_NODE;
     v->entry = entry;
-    v->params = params;
-    v->num_of_pars = num_of_pars;
+    v->args = args_list;
 
-    return (struct NoAST *) v;
+    NoAST *base_node = criarNo(FUNC_CALL_NODE, NULL, NULL);
+    base_node->data = v;
+    return base_node;
 }
 
-NoAST *criarNoArithm(enum Arithm_op op, NoAST *esquerda, NoAST *direita){
+NoAST* criarNoExprList(NoAST *expr, NoAST *next_expr_list) {
+    No_Expr_List *node = malloc(sizeof(No_Expr_List));
+    node->tipo_no = EXPR_LIST_NODE;
+    node->expr = expr;
+    node->next = next_expr_list; // next é o início da lsita
+
+    NoAST *base_node = criarNo(EXPR_LIST_NODE, NULL, NULL);
+    base_node->data = node;
+    return base_node;
+}
+
+NoAST *criarNoArithm(Arithm_op op, NoAST *esquerda, NoAST *direita){
     NoAST_Arithm *v = malloc (sizeof (NoAST_Arithm));
 	
 	v->type = ARITHM_NODE;
 	v->op = op;
 	v->esquerda = esquerda;
 	v->direita = direita;
-		return (struct AST_Node *) v;
+
+	NoAST *node = criarNo(ARITHM_NODE, NULL, NULL);
+    node->data = v;
+    return node;
+
 }
 
-NoAST *criarNoBool(enum Bool_op op, NoAST *esquerda, NoAST *direita){
-	NoAST_Bool *v = malloc (sizeof (NoAST_Bool));
+NoAST *criarNoLogic(Bool_op op, NoAST *esquerda, NoAST *direita){
+	NoAST_Logic *v = malloc (sizeof (NoAST_Logic));
 	
-	v->type = BOOL_NODE;
+	v->type = LOGIC_OP_NODE;
     v->op = op;
 	v->esquerda = esquerda;
 	v->direita = direita;
 	
-	return (struct NoAST *) v;
+	NoAST *node = criarNo(LOGIC_OP_NODE, NULL, NULL);
+    node->data = v;
+    return node;
 }
 
-NoAST *criarNoRel(enum Rel_op op, NoAST *esquerda, NoAST *direita){
-    NoAST_Rel *v = malloc(sizeof(NoAST_Rel));
 
-    v->type = REL_NODE;
-    v->op = op;
-    v->esquerda = esquerda;
-    v->direita = direita;
+NoAST *criarNoRel(Rel_op op, NoAST *left, NoAST *right) {
+    NoAST_Rel *rel_node = malloc(sizeof(NoAST_Rel));
+    rel_node->type = REL_OP_NODE; 
+    rel_node->op = op;
+    rel_node->esquerda = left;
+    rel_node->direita = right;
 
-    return (struct NoAST *) v;
+    NoAST *node = criarNo(REL_OP_NODE, NULL, NULL);
+    node->data = rel_node;
+    return node;
 }
 
+void imprimirAST(NoAST *node, int indent) {
+    if (!node) return;
+
+    for (int i = 0; i < indent; i++) printf("  ");
+
+    printf("Type: %d (", node->type);
+
+    switch (node->type) {
+        case FUNC_CALL_NODE: {
+            NoAST_Func_Call *func_node = (NoAST_Func_Call*)node;
+            printf("Type: FUNC_CALL (Nome: %s)\n", func_node->entry->nome);
+            if (func_node->args) {
+                imprimirAST(func_node->args, indent + 1); // Imprime os argumentos
+            }
+            break;
+        }
+        case EXPR_LIST_NODE: {
+            No_Expr_List *list_node = (No_Expr_List*)node;
+            printf("Type: EXPR_LIST\n");
+            // Percorre a lista de expressões
+            No_Expr_List *current_node = list_node;
+            while (current_node) {
+                imprimirAST(current_node->expr, indent + 1);
+                // IMPORTANTE: A lista é construída de trás para frente no Bison.
+                // O 'next' aponta para o que foi adicionado *antes* dele.
+                // Para imprimir na ordem correta, você pode precisar de uma lógica diferente,
+                // ou simplesmente aceitar a ordem inversa na AST por enquanto.
+                // Por simplicidade agora, vou manter a impressão de 'next'.
+                current_node = (No_Expr_List*)current_node->next;
+            }
+            break;
+        }
+        case ARITHM_NODE: {
+            NoAST_Arithm *arithm_node = (NoAST_Arithm *)node->data;
+            printf("ARITH_OP - ");
+            switch (arithm_node->op) {
+                case OP_ADICAO: printf("+"); break;
+                case OP_SUBTRACAO: printf("-"); break;
+                case OP_MULTIPLICACAO: printf("*"); break;
+                case OP_DIVISAO: printf("/"); break;
+            }
+            break;
+        }
+        case LOGIC_OP_NODE: {
+            NoAST_Logic *logic_node = (NoAST_Logic *)node->data;
+            printf("LOGIC_OP - ");
+            switch (logic_node->op) {
+                case OP_AND: printf("AND"); break;
+                case OP_OR: printf("OR"); break;
+                case OP_NOT: printf("NOT"); break;
+            }
+            break;
+        }
+        case REL_OP_NODE: {
+            NoAST_Rel *rel_node = (NoAST_Rel *)node->data;
+            printf("REL_OP - ");
+            switch (rel_node->op) {
+                case OP_REL_EQ: printf("=="); break;
+                case OP_REL_NEQ: printf("!="); break;
+                case OP_REL_LT: printf("<"); break;
+                case OP_REL_GT: printf(">"); break;
+                case OP_REL_LE: printf("<="); break;
+                case OP_REL_GE: printf(">="); break;
+            }
+            break;
+        }
+        case IF_NODE:
+        case ELSIF_NODE:
+        case ELSE_NODE: {
+            NoAST_if *if_node_data = (NoAST_if *)node->data;
+            if (if_node_data->condition) {
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("  Condition:\n");
+                imprimirAST(if_node_data->condition, indent + 2);
+            }
+            if (if_node_data->if_branch) { // Seu campo é if_branch
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("  Block:\n");
+                imprimirAST(if_node_data->if_branch, indent + 2);
+            }
+            if (if_node_data->next_branch) {
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("  Next Branch:\n");
+                imprimirAST(if_node_data->next_branch, indent + 1); // Mesmo nível para o próximo ramo
+            }
+            break;
+        }
+    }
+    printf(")\n");
+
+    if (node->type == BASIC_NODE) {
+        imprimirAST(node->esquerda, indent + 1);
+        imprimirAST(node->direita, indent + 1);
+    } else if (node->data != NULL) {
+        switch (node->type) {
+            case ASSIGN_NODE:
+                imprimirAST(((NoAST_Assign *)node->data)->value_expr, indent + 1);
+                break;
+            case ARITHM_NODE:
+            case LOGIC_OP_NODE:
+            case REL_OP_NODE: 
+                imprimirAST(((NoAST_Arithm *)node->data)->esquerda, indent + 1); 
+                if (((NoAST_Arithm *)node->data)->direita) {
+                    imprimirAST(((NoAST_Arithm *)node->data)->direita, indent + 1);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+NoAST *criarNoFuncDef(Simbolo *symbol_entry, Parametro *parameters, NoAST *body) {
+    NoAST_FuncDef *func_def_data = malloc(sizeof(NoAST_FuncDef));
+    if (func_def_data == NULL) {
+        perror("Erro ao alocar NoAST_FuncDef data");
+        exit(EXIT_FAILURE);
+    }
+
+    func_def_data->type = FUNC_DEF_NODE;
+    func_def_data->func_entry = symbol_entry;
+    func_def_data->params_list = parameters;
+    func_def_data->body = body;
+
+    NoAST *base_node = criarNo(FUNC_DEF_NODE, NULL, NULL);
+    base_node->data = func_def_data;
+
+    return base_node;
+}
+
+/*
 NoAST *criarNoEque(enum Equal_op op, NoAST *esquerda, NoAST *direita){
     NoAST_Equ *v = malloc(sizeof(NoAST_Equ));
 
@@ -165,7 +375,7 @@ NoAST *criarNoEque(enum Equal_op op, NoAST *esquerda, NoAST *direita){
     return (struct NoAST *) v;
 }
 
-NoAST *criarNoFuncDecl(int ret_type, list_t *entry){
+NoAST *criarNoFuncDecl(int ret_type, Simbolo *entry){
     NoAST_Func_Decl *v = malloc(sizeof(NoAST_Func_Decl));
 
     v->type = FUNC_DECL;
@@ -183,19 +393,19 @@ NoAST *criarNoReturn(int ret_type, NoAST *ret_val){
     v->ret_val;
 
     return (struct NoAST *) v;
-}
-
+}*/
+/*
 void imprimirAST(NoAST *no) {
 
     NoAST_Decl *temp_decl;
     NoAST_Const *temp_const;
     NoAST_if *temp_if;
-	NoAST_assign *temp_assign;
+	NoAST_Assign *temp_assign;
 	NoAST_simple *temp_simple;
 	NoAST_incr *temp_incr;
 	NoAST_Func_Call *temp_func_call;
 	NoAST_Arithm *temp_arithm;
-	NoAST_Bool *temp_bool;
+	NoAST_Logic *temp_bool;
 	NoAST_Rel *temp_rel;
 	NoAST_Equ *temp_equ;
 	NoAST_Func_Decl *temp_func_decl;
@@ -316,7 +526,7 @@ char* gerarTAC(NoAST *no) {
 		ast_print_node(no);
 	}
     else if(no->type == ASSIGN_NODE){
-		NoAST_assign *temp_assign = (struct AST_Node_Assign *) no;
+		NoAST_Assign *temp_assign = (struct AST_Node_Assign *) no;
 		gerarTAC(temp_assign->assign_val);
 		ast_print_node(no);
 	}
@@ -336,3 +546,5 @@ char* gerarTAC(NoAST *no) {
 		ast_print_node(no);
 	}
 }
+
+*/
