@@ -5,28 +5,46 @@
 #define BY_VALUE 1
 #define BY_REFER 2
 #define PARAM_CHECK 1
-static list_t **hash_table;
-static revisit_queue *queue;
 
-typedef struct Param{
-	int par_type;
-	char param_name[MAXTOKENLEN];
-	
-	int ival; double fval; char *st_sval;
-	int passing;
-}Param;
+#define MAX_NOME_LEN 50
+#define MAX_TIPO_LEN 50
+#define MAX_RETURN_TYPE_LEN 50 
+
+typedef struct Parametro {
+    char nome[MAX_NOME_LEN];
+    struct Parametro *prox;
+} Parametro;
 
 typedef struct RefList{ 
     int lineno;
     struct RefList *next;
 }RefList;
 
-typedef struct simbolo {
-    char nome[32];
-    char tipo[16];
-    struct simbolo *prox;
+typedef struct Simbolo {
+    char nome[MAX_NOME_LEN];
+    char tipo[MAX_TIPO_LEN];
+	char return_type[MAX_RETURN_TYPE_LEN];
+	struct Simbolo **parameters;   
+	int num_parameters;
+    struct Simbolo *prox;
 } Simbolo;
 
+// agora tabela de símbolos é uma lista de símbolos
+typedef struct TabelaSimbolos {
+    Simbolo *head;
+} TabelaSimbolos;
+
+// adicionei essa nova estrutura para representar escopos
+// cada escopo possui uma tabela de símbolos e um escopo pai
+typedef struct Scope {
+    TabelaSimbolos *symbol_table;
+    struct Scope *parent;
+} Scope;
+
+extern Scope *current_scope;
+
+
+/*
 typedef struct list_t{
 	char st_name[MAXTOKENLEN];
     int st_size;
@@ -47,10 +65,26 @@ typedef struct revisit_queue{
 	char *st_name;
 	int revisit_type;		
 	struct revisit_queue *next;
-}revisit_queue;
+}revisit_queue;*/
+
+void enterScope();
+void exitScope();
+TabelaSimbolos *criarTabelaSimbolos();
+void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo);
+Simbolo *buscarNaTabela(TabelaSimbolos *table, const char *nome);
+void liberarTabelaSimbolos(TabelaSimbolos *table);
 
 void inserirSimbolo(char *nome, char *tipo);
 Simbolo *buscarSimbolo(char *nome);
-void imprimirTabela();
+void imprimirTabelaEscopos();
+
+void register_function_parameters(Simbolo *func_entry, Parametro *param_head);
+
+/*
+static list_t **hash_table;
+static revisit_queue *queue;*/
+
+#include "../ST/ast.h" // incluindo ast.h para ter acesso a Parametro*
+// void register_function_parameters(Simbolo *func_entry, Parametro *param_head);
 
 #endif
