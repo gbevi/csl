@@ -1,7 +1,7 @@
-
 %{
 #include "parser.tab.h"
 #include <stdio.h>
+#define _GNU_SOURCE
 #include <string.h>
 %}
 
@@ -36,19 +36,25 @@ return          { return RETURN; }
 "or"            { return OR; }
 "not"           { return NOT; }
 
-[0-9]+\.[0-9]+    { yylval.str = strdup(yytext); return FLOAT_LITERAL; }
-[0-9]+            { yylval.valor = atoi(yytext); return NUM; }
+[ \t]+          ;
+[\r]?\n         { yylineno++; return EOL; }
 
-"true"   { yylval.str = strdup("true"); return BOOL_LITERAL; }
-"false"  { yylval.str = strdup("false"); return BOOL_LITERAL; }
+[0-9]+\.[0-9]+  { yylval.double_val_token = atof(yytext); return FLOAT_LITERAL; } 
+[0-9]+          { yylval.int_val_token = atoi(yytext); return NUM; }
 
-'\''[a-zA-Z0-9]'\''    { yylval.str = strdup(yytext); return CHAR_LITERAL; }
+"true"          { yylval.int_val_token = 1; return BOOL_LITERAL; }
+"false"         { yylval.int_val_token = 0; return BOOL_LITERAL; }
 
-\"[^\"]*\"      { yylval.str = strdup(yytext); return STRING; }
+'\''[^\']'\''   { yylval.char_val_token = yytext[1]; return CHAR_LITERAL; }
 
-[a-zA-Z_][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return ID; }
+\"[^\"]*\"      {
+                    size_t len = strlen(yytext);
+                    yylval.str_val_token = strndup(yytext + 1, len - 2);
+                    return STRING;
+                }
 
 [0-9]+[a-zA-Z_][a-zA-Z0-9_]* {printf("Identificador inválido (%s)\n", yytext);}
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.str_val_token = strdup(yytext); return ID; }
 
 "=="            { return EQ; }
 "!="            { return NEQ; }
@@ -64,23 +70,20 @@ return          { return RETURN; }
 "*"             { return MULTIPLY; }
 "/"             { return DIVIDE; }
 
-".."            { return RANGE; }
+".."     { return RANGE_INCLUSIVE; }
+"..."    { return RANGE_EXCLUSIVE; }
 
 "("             { return LPAREN; }
 ")"             { return RPAREN; }
 "{"             { return LBRACE; }
 "}"             { return RBRACE; }
 ","             { return COMMA; }
+";"             { return SEMICOLON; }
 
-\n              { return EOL; }
-
-[ \t\n]+        ;
-
-. { printf("Caractere inválido '%s'\n", yytext);}
+. { fprintf(stderr, "Erro lexico na linha %d: Caractere invalido '%c' (codigo %d)\n", yylineno, yytext[0], yytext[0]); }
 
 %%
 
 int yywrap(void) {
     return 1;
 }
-
