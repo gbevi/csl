@@ -39,6 +39,7 @@ typedef struct TabelaSimbolos {
 typedef struct Scope {
     TabelaSimbolos *symbol_table;
     struct Scope *parent;
+    int level;
 } Scope;
 
 extern Scope *current_scope;
@@ -74,7 +75,6 @@ void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo);
 Simbolo *buscarNaTabela(TabelaSimbolos *table, const char *nome);
 void liberarTabelaSimbolos(TabelaSimbolos *table);
 
-void inserirSimbolo(char *nome, char *tipo);
 Simbolo *buscarSimbolo(char *nome);
 void imprimirTabelaEscopos();
 

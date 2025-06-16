@@ -30,6 +30,7 @@ typedef enum Node_Type {
     ELSIF_NODE,
     ELSE_NODE,
     FOR_NODE,
+    FOR_HEADER_NODE,
     FOR_IN_NODE,
     RANGE_NODE, // pro for com 'do'
     WHILE_NODE,
@@ -238,9 +239,6 @@ typedef struct NoAST_Func_Decl{
 
 typedef struct NoAST_Return{
 	Node_Type type; 
-
-	int ret_type;
-
 	struct NoAST *ret_val;
 }NoAST_Return;
 
@@ -286,7 +284,7 @@ NoAST *criarNoEque(Equal_op op, NoAST *esquerda, NoAST *direita);
 
 NoAST *criarNoFuncDecl(int ret_type, Simbolo *entry);
 
-NoAST *criarNoReturn(int ret_type, NoAST *ret_val);
+NoAST *criarNoReturn(NoAST *ret_val);
 
 void imprimirAST(NoAST *node, int indent);
 

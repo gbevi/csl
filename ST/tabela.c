@@ -4,7 +4,6 @@
 #include <string.h>
 
 Scope *current_scope = NULL;
-Simbolo *tabela = NULL;
 
 TabelaSimbolos *criarTabelaSimbolos() {
     TabelaSimbolos *new_table = malloc(sizeof(TabelaSimbolos));
@@ -18,6 +17,7 @@ TabelaSimbolos *criarTabelaSimbolos() {
 
 // insere um símbolo na tabela
 void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) {
+    printf("DEBUG TS: [inserirNaTabela] Tentando inserir '%s' (tipo: %s) na tabela %p (head: %p)\n", nome, tipo, (void*)table, (void*)table->head);
     Simbolo *novo = malloc(sizeof(Simbolo));
     strncpy(novo->nome, nome, MAX_NOME_LEN - 1);
     novo->nome[MAX_NOME_LEN - 1] = '\0';
@@ -31,46 +31,25 @@ void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) 
 
     novo->prox = table->head;
     table->head = novo;
-}
-
-void inserirSimbolo(char *nome, char *tipo) {
-    // Verifica se o símbolo já foi inserido
-    Simbolo *s = buscarSimbolo(nome);
-
-    if (s != NULL) { // significa que já existe o símbolo, ent ele n faz nada
-        return;
-    }
-
-    Simbolo *novo = malloc(sizeof(Simbolo));
-    
-    strncpy(novo->nome, nome, MAX_NOME_LEN - 1);
-    novo->nome[MAX_NOME_LEN - 1] = '\0'; // só pra garantir a terminação com \0
-
-    strncpy(novo->tipo, tipo, MAX_TIPO_LEN - 1);
-    novo->tipo[MAX_TIPO_LEN - 1] = '\0';
-
-    novo->return_type[0] = '\0'; 
-    novo->parameters = NULL;
-    novo->num_parameters = 0;
-
-    novo->prox = NULL;
-    if (tabela == NULL) {
-        tabela = novo;
-    } else {
-        Simbolo *last = tabela;
-        while (last->prox)
-            last = last->prox;
-        last->prox = novo;
-    }
+    printf("DEBUG TS: [inserirNaTabela] '%s' INSERIDO. Nova head da tabela %p: %p\n", nome, (void*)table, (void*)table->head);
 }
 
 
 // para buscar símbolo numa tabela específica
 Simbolo *buscarNaTabela(TabelaSimbolos *table, const char *nome) {
-    if (!table) return NULL;
-    for (Simbolo *s = table->head; s; s = s->prox)
-        if (strcmp(s->nome, nome) == 0)
+    printf("DEBUG TS: [buscarNaTabela] Buscando '%s' na tabela %p (head: %p)\n", nome, (void*)table, (void*)table->head);
+    if (!table) {
+        printf("DEBUG TS: [buscarNaTabela] Tabela de símbolos nula.\n");
+        return NULL;
+    }
+    for (Simbolo *s = table->head; s; s = s->prox) {
+        printf("DEBUG TS: [buscarNaTabela] Comparando '%s' com '%s'\n", nome, s->nome);
+        if (strcmp(s->nome, nome) == 0) {
+            printf("DEBUG TS: [buscarNaTabela] '%s' ENCONTRADO na tabela %p.\n", nome, (void*)table);
             return s;
+        }
+    }
+    printf("DEBUG TS: [buscarNaTabela] '%s' NAO ENCONTRADO nesta tabela.\n", nome);
     return NULL;
 }
 
@@ -91,14 +70,18 @@ void liberarTabelaSimbolos(TabelaSimbolos *table) {
 
 // adaptado para buscar símbolos em um escopo
 Simbolo *buscarSimbolo(char *nome) {
+    printf("DEBUG TS: [buscarSimbolo] Buscando '%s' a partir do escopo atual (nivel %d).\n", nome, current_scope ? current_scope->level : -1);
     Scope *temp_scope = current_scope;
     while (temp_scope != NULL) {
+        printf("DEBUG TS: [buscarSimbolo] Verificando escopo nivel %d (tabela %p).\n", temp_scope->level, (void*)temp_scope->symbol_table);
         Simbolo *simbolo = buscarNaTabela(temp_scope->symbol_table, nome);
         if (simbolo != NULL) {
+            printf("DEBUG TS: [buscarSimbolo] '%s' ENCONTRADO no escopo nivel %d.\n", nome, temp_scope->level);
             return simbolo;
         }
         temp_scope = temp_scope->parent;
     }
+    printf("DEBUG TS: [buscarSimbolo] '%s' NAO ENCONTRADO em nenhum escopo.\n", nome);
     return NULL;
 }
 
@@ -143,6 +126,7 @@ void enterScope() {
         perror("Erro ao alocar novo escopo");
         exit(EXIT_FAILURE);
     }
+    new_scope->level = (current_scope == NULL) ? 0 : (current_scope->level + 1);
     new_scope->symbol_table = criarTabelaSimbolos(); // cria uma nova tabela para este escopo
     new_scope->parent = current_scope; // define o escopo anterior como pai
     current_scope = new_scope;         // define q este é o novo escopo atual

@@ -383,17 +383,18 @@ NoAST *criarNoFuncDecl(int ret_type, Simbolo *entry){
     v->entry = entry;
 
     return (struct NoAST *) v;
-}
+}*/
 
-NoAST *criarNoReturn(int ret_type, NoAST *ret_val){
+NoAST *criarNoReturn(NoAST *ret_val){
+    NoAST *node = (NoAST *)malloc(sizeof(NoAST));
+    
     NoAST_Return *v = malloc(sizeof(NoAST_Return));
 
-    v->type = FUNC_DECL;
-    v->ret_type = ret_type;
-    v->ret_val;
+    v->type = RETURN_NODE;
+    v->ret_val = ret_val;
 
     return (struct NoAST *) v;
-}*/
+}
 /*
 void imprimirAST(NoAST *no) {
 
