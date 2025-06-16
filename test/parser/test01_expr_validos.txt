@@ -1,4 +1,10 @@
 x = 6
+y = 5
+z = 2
+a = true
+b = false
+c = 10
+
 x + y
 y - z
 x / y
