@@ -4,10 +4,12 @@ echo "======================="
 echo " Testando Parser"
 echo "======================="
 
+make all || { echo "ERRO: Falha ao compilar o projeto."; exit 1; }
+
 for teste in test/parser/*.txt; do
     echo "-----------------------"
     echo "Testando: $teste"
-    ./meu_parser < "$teste"
+    ./build/meu_compilador "$teste"
     resultado=$?
 
     if [[ "$teste" == *_valido* ]]; then
