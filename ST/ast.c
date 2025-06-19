@@ -11,17 +11,8 @@ NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita){
     v->esquerda = esquerda;
     v->direita = direita;
 	v->data = NULL;
+    v->simbolo = NULL;
     return v;
-}
-
-NoAST *criarNoDecl(int dataType, Simbolo **names){
-    NoAST_Decl *v = malloc(sizeof(NoAST_Decl));
-
-    v->dateType = dataType;
-    v->names = names;
-    v->type = DECL_NODE;
-
-    return (struct NoAST *) v;
 }
 
 NoAST *criarNoConst(DataType const_type, Value val){
@@ -40,7 +31,7 @@ NoAST *criarNoConst(DataType const_type, Value val){
     return node;
 }
 
-NoAST *criarNoId(char *name, void *entry) {
+NoAST *criarNoId(char *name, Simbolo *entry) {
     NoAST_Id *id_node = malloc(sizeof(NoAST_Id));
 
     id_node->type = ID_NODE;
@@ -49,13 +40,12 @@ NoAST *criarNoId(char *name, void *entry) {
 
     NoAST *node = criarNo(ID_NODE, NULL, NULL);
     node->data = id_node;
+    node->simbolo = entry;
     return node;
 }
 
 
 NoAST *criarNoIfElseChain(Node_Type type, NoAST *condition, NoAST *branch_block, NoAST *next_branch) {
-    NoAST *base_node = criarNo(type, NULL, NULL); 
-
     NoAST_if *v = malloc(sizeof(NoAST_if));
 
     v->type = type;
@@ -63,35 +53,8 @@ NoAST *criarNoIfElseChain(Node_Type type, NoAST *condition, NoAST *branch_block,
     v->if_branch = branch_block;
     v->next_branch = next_branch;
 
+    NoAST *base_node = criarNo(type, NULL, NULL); 
     base_node->data = v; 
-    return base_node;
-}
-
-NoAST *criarNoElsifCompleto(NoAST *condition, NoAST *elsif_branch) {
-    NoAST *base_node = criarNo(ELSIF_NODE, NULL, NULL);
-
-    NoAST_elsif *v = malloc(sizeof(NoAST_elsif));
-
-    v->type = ELSIF_NODE;
-    v->condition = condition;
-    v->elsif_branch = elsif_branch;
-
-    base_node->data = v;
-
-    return base_node;
-}
-
-NoAST *criarNoFor(NoAST *initialize, NoAST *condition, NoAST *increment, NoAST *for_branch) {
-    NoAST_for *v = malloc (sizeof(NoAST_for));
-
-    v->type = FOR_NODE;
-    v->initialize = initialize;
-    v->condition = condition;
-    v->increment = increment;
-    v->for_branch = for_branch;
-
-    NoAST *base_node = criarNo(FOR_NODE, NULL, NULL);
-    base_node->data = v;
     return base_node;
 }
 
@@ -130,35 +93,23 @@ NoAST *criarNoWhile(NoAST *condition, NoAST *while_brach) {
 
     NoAST *base_node = criarNo(WHILE_NODE, NULL, NULL);
     base_node->data = v;
-
     return base_node;
 }
 
-NoAST *criarNoAssign(void *target_entry, NoAST *value_expr) {
-    NoAST_Assign *assign_node = malloc(sizeof(NoAST_Assign));
+NoAST *criarNoAssign(Simbolo *target_entry, NoAST *value_expr) {
+    NoAST_Assign *assign_node_data = malloc(sizeof(NoAST_Assign));
 
-    assign_node->type = ASSIGN_NODE;
-    assign_node->target_entry = target_entry;
-    assign_node->value_expr = value_expr;
+    assign_node_data->type = ASSIGN_NODE;
+    assign_node_data->target_entry = target_entry;
+    assign_node_data->value_expr = value_expr;
 
-    NoAST *node = malloc(sizeof(NoAST));
-    node->type = ASSIGN_NODE;
-    node->esquerda = NULL;
-    node->direita = NULL;
-    node->data = assign_node;
+    NoAST *node = criarNo(ASSIGN_NODE, NULL, NULL);
+    node->data = assign_node_data;
+    node->simbolo = target_entry;
     return node;
 }
 
 /*
-NoAST *criarNoSimple(int statement_type) {
-    NoAST_simple *v = malloc (sizeof(NoAST_simple));
-
-    v->type = SIMPLE_NODE;
-    v->statement_type = statement_type;
-
-    return (struct NoAST *) v;
-}
-
 NoAST *criarNoIncr(Simbolo *entry, int incr_type, int pf_type) {
     NoAST_incr *v = malloc (sizeof(NoAST_incr));
 
@@ -179,6 +130,7 @@ NoAST *criarNoFuncCall(Simbolo *entry, NoAST *args_list) {
 
     NoAST *base_node = criarNo(FUNC_CALL_NODE, NULL, NULL);
     base_node->data = v;
+    base_node->simbolo = entry;
     return base_node;
 }
 
@@ -231,6 +183,31 @@ NoAST *criarNoRel(Rel_op op, NoAST *left, NoAST *right) {
     NoAST *node = criarNo(REL_OP_NODE, NULL, NULL);
     node->data = rel_node;
     return node;
+}
+
+NoAST *criarNoFuncDef(Simbolo *symbol_entry, Parametro *parameters, NoAST *body) {
+    NoAST_FuncDef *func_def_data = malloc(sizeof(NoAST_FuncDef));
+
+    func_def_data->type = FUNC_DEF_NODE;
+    func_def_data->func_entry = symbol_entry;
+    func_def_data->params_list = parameters;
+    func_def_data->body = body;
+
+    NoAST *base_node = criarNo(FUNC_DEF_NODE, NULL, NULL);
+    base_node->data = func_def_data;
+
+    return base_node;
+}
+
+NoAST *criarNoReturn(NoAST *ret_val){
+    NoAST *node = (NoAST *)malloc(sizeof(NoAST));
+    
+    NoAST_Return *v = malloc(sizeof(NoAST_Return));
+
+    v->type = RETURN_NODE;
+    v->ret_val = ret_val;
+
+    return (struct NoAST *) v;
 }
 
 void imprimirAST(NoAST *node, int indent) {
@@ -300,7 +277,6 @@ void imprimirAST(NoAST *node, int indent) {
             break;
         }
         case IF_NODE:
-        case ELSIF_NODE:
         case ELSE_NODE: {
             NoAST_if *if_node_data = (NoAST_if *)node->data;
             if (if_node_data->condition) {
@@ -345,71 +321,17 @@ void imprimirAST(NoAST *node, int indent) {
     }
 }
 
-NoAST *criarNoFuncDef(Simbolo *symbol_entry, Parametro *parameters, NoAST *body) {
-    NoAST_FuncDef *func_def_data = malloc(sizeof(NoAST_FuncDef));
-    if (func_def_data == NULL) {
-        perror("Erro ao alocar NoAST_FuncDef data");
-        exit(EXIT_FAILURE);
-    }
-
-    func_def_data->type = FUNC_DEF_NODE;
-    func_def_data->func_entry = symbol_entry;
-    func_def_data->params_list = parameters;
-    func_def_data->body = body;
-
-    NoAST *base_node = criarNo(FUNC_DEF_NODE, NULL, NULL);
-    base_node->data = func_def_data;
-
-    return base_node;
-}
-
-/*
-NoAST *criarNoEque(enum Equal_op op, NoAST *esquerda, NoAST *direita){
-    NoAST_Equ *v = malloc(sizeof(NoAST_Equ));
-
-    v->type = EQU_NODE;
-    v->op = op;
-    v->esquerda = esquerda;
-    v->direita = direita;
-
-    return (struct NoAST *) v;
-}
-
-NoAST *criarNoFuncDecl(int ret_type, Simbolo *entry){
-    NoAST_Func_Decl *v = malloc(sizeof(NoAST_Func_Decl));
-
-    v->type = FUNC_DECL;
-    v->ret_type = ret_type;
-    v->entry = entry;
-
-    return (struct NoAST *) v;
-}*/
-
-NoAST *criarNoReturn(NoAST *ret_val){
-    NoAST *node = (NoAST *)malloc(sizeof(NoAST));
-    
-    NoAST_Return *v = malloc(sizeof(NoAST_Return));
-
-    v->type = RETURN_NODE;
-    v->ret_val = ret_val;
-
-    return (struct NoAST *) v;
-}
 /*
 void imprimirAST(NoAST *no) {
 
-    NoAST_Decl *temp_decl;
     NoAST_Const *temp_const;
     NoAST_if *temp_if;
 	NoAST_Assign *temp_assign;
-	NoAST_simple *temp_simple;
 	NoAST_incr *temp_incr;
 	NoAST_Func_Call *temp_func_call;
 	NoAST_Arithm *temp_arithm;
 	NoAST_Logic *temp_bool;
 	NoAST_Rel *temp_rel;
-	NoAST_Equ *temp_equ;
-	NoAST_Func_Decl *temp_func_decl;
 	NoAST_Return *temp_return;
     
     switch (no->type){
@@ -431,9 +353,6 @@ void imprimirAST(NoAST *no) {
 			break;
 		case ELSIF_NODE:
 			printf("Elsif Node\n");
-			break;
-		case FOR_NODE:
-			printf("For Node\n");
 			break;
 		case WHILE_NODE:
 			printf("While Node\n");
@@ -506,12 +425,6 @@ char* gerarTAC(NoAST *no) {
 			gerarTAC(temp_if->elsif_branchs[i]);
 		}
 		gerarTAC(temp_if->else_branch);
-		ast_print_node(no);
-	}
-    else if(no->type == ELSIF_NODE){
-		NoAST_elsif *temp_elsif = (struct AST_Node_Elsif *) no;
-		gerarTAC(temp_elsif->condition);
-		gerarTAC(temp_elsif->elsif_branch);
 		ast_print_node(no);
 	}
     else if(no->type == FOR_NODE){
