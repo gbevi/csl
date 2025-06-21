@@ -17,4 +17,8 @@ elsif x > 3
   y = 8
 elsif x 
   y = 3
+elsif x == 1
+  y += x
+elsif x == 3
+  y -= x
 end

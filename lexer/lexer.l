@@ -66,13 +66,9 @@ return          { return RETURN; }
 "="             { return ASSIGN; }
 
 "+"             { return PLUS; }
+"+="            { return PLUS_ASSIGN; }
 "-"             { return MINUS; }
-"*"             { return MULTIPLY; }
-"/"             { return DIVIDE; }
-
-".."     { return RANGE_INCLUSIVE; }
-"..."    { return RANGE_EXCLUSIVE; }
-
+"-="            { return MINUS_ASSIGN; }
 "("             { return LPAREN; }
 ")"             { return RPAREN; }
 "{"             { return LBRACE; }
