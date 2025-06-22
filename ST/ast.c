@@ -349,6 +349,46 @@ void imprimirAST(NoAST *node, int indent) {
             }
             break;
         }
+
+        case DECL_NODE: {
+            NoAST_Decl *data = (NoAST_Decl*)node->data;
+            printf("(VAR_DECL Type: %d)\n", data->dateType);
+            break;
+        }
+
+        case FOR_IN_NODE: {
+            NoAST_ForIn *data = (NoAST_ForIn*)node->data;
+            printf("(FOR IN)\n");
+            
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Iterator:\n");
+            imprimirAST(data->iterator_id, indent + 2);
+
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Collection:\n");
+            imprimirAST(data->collection_expr, indent + 2);
+            
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Body:\n");
+            imprimirAST(data->body, indent + 2);
+            break;
+        }
+
+        case RANGE_NODE: {
+            NoAST_Range *data = (NoAST_Range*)node->data;
+            // Imprime '...' se for exclusivo, '..' se for inclusivo
+            printf("(RANGE %s)\n", data->exclusive ? "..." : "..");
+
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Start:\n");
+            imprimirAST(data->start, indent + 2);
+
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("End:\n");
+            imprimirAST(data->end, indent + 2);
+            break;
+        }
+
         case BASIC_NODE: {
              printf("(BLOCK)\n");
              imprimirAST(node->esquerda, indent + 1);

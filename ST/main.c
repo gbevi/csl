@@ -1,4 +1,4 @@
-// este código teve auxílio de inteligencia artificial para geração do teste.
+// main_teste_impressao.c
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,43 +7,35 @@
 #include "tabela.h"
 
 int main() {
-    printf("--- 1. Preparando o ambiente ---\n");
+    printf("--- Testando a impressão de nós FOR..IN e RANGE ---\n");
     enterScope();
 
+    // Símbolos necessários para o teste
+    Simbolo* sym_i = inserirNaTabela(current_scope->symbol_table, "i", "int");
     Simbolo* sym_x = inserirNaTabela(current_scope->symbol_table, "x", "int");
-    Simbolo* sym_func = inserirNaTabela(current_scope->symbol_table, "func_retorna_42", "function");
-    
-    printf("Símbolos registrados.\n\n");
-    printf("--- 2. Construindo a AST ---\n");
 
-    // --- Parte A: A DEFINIÇÃO DA FUNÇÃO ---
-    // def func_retorna_42() { return 42; }
-    Value v42; v42.valint = 42;
-    NoAST* no_42 = criarNoConst(TIPO_INT, v42);
-    NoAST* no_return = criarNoReturn(no_42); // <<<--- Nó que queremos testar
-    NoAST* func_def = criarNoFuncDef(sym_func, NULL, no_return);
+    // --- Construindo a AST para: for i in 1..10 { x = i } ---
 
-    // --- Parte B: O CÓDIGO PRINCIPAL ---
-    // x = func_retorna_42();
-    NoAST* func_call = criarNoFuncCall(sym_func, NULL);
-    NoAST* assign_x = criarNoAssign(sym_x, func_call);
+    // 1. O iterador: 'i'
+    NoAST* iterador = criarNoId("i", sym_i);
 
-    // --- Parte C: JUNTANDO TUDO ---
-    NoAST* programa_completo = criarNo(BASIC_NODE, func_def, assign_x);
+    // 2. A coleção, que é um RANGE: 1..10
+    Value v1; v1.valint = 1;
+    Value v10; v10.valint = 10;
+    NoAST* range_start = criarNoConst(TIPO_INT, v1);
+    NoAST* range_end = criarNoConst(TIPO_INT, v10);
+    NoAST* colecao = criarNoRange(range_start, range_end, 0); // 0 = inclusivo (..)
 
-    printf("AST construída.\n\n");
-    
-    // =======================================================
-    // ** O TESTE ACONTECE AQUI **
-    // =======================================================
-    printf("--- Imprimindo a AST para verificação ---\n");
-    imprimirAST(programa_completo, 0);
-    printf("-----------------------------------------\n\n");
-    // =======================================================
+    // 3. O corpo do laço: { x = i }
+    NoAST* corpo_for_in = criarNoAssign(sym_x, criarNoId("i", sym_i));
 
-    printf("--- 3. Gerando o Código TAC ---\n");
-    gerarCodigoTAC(programa_completo);
-    printf("Geração de código concluída.\n\n");
+    // 4. O nó FOR_IN completo
+    NoAST* no_for_in = criarNoForIn(iterador, colecao, corpo_for_in);
+
+    printf("AST construída. Imprimindo agora:\n\n");
+
+    // --- A CHAMADA DE TESTE ---
+    imprimirAST(no_for_in, 0);
 
     exitScope();
     return 0;
