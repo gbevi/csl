@@ -356,6 +356,16 @@ void imprimirAST(NoAST *node, int indent) {
              break;
         }
 
+        case RETURN_NODE: {
+            NoAST_Return* data = (NoAST_Return*)node->data;
+            printf("(RETURN)\n");
+            
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Value:\n");
+            imprimirAST(data->ret_val, indent + 2);
+            break;
+        }
+
         case FOR_NODE: {
             NoAST_for *data = (NoAST_for*)node->data;
             printf("(FOR)\n");
