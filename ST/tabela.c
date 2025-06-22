@@ -16,7 +16,7 @@ TabelaSimbolos *criarTabelaSimbolos() {
 }
 
 // insere um símbolo na tabela
-void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) {
+Simbolo* inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) {
     printf("DEBUG TS: [inserirNaTabela] Tentando inserir '%s' (tipo: %s) na tabela %p (head: %p)\n", nome, tipo, (void*)table, (void*)table->head);
     Simbolo *novo = malloc(sizeof(Simbolo));
     strncpy(novo->nome, nome, MAX_NOME_LEN - 1);
@@ -32,6 +32,7 @@ void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) 
     novo->prox = table->head;
     table->head = novo;
     printf("DEBUG TS: [inserirNaTabela] '%s' INSERIDO. Nova head da tabela %p: %p\n", nome, (void*)table, (void*)table->head);
+    return novo; 
 }
 
 

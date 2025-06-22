@@ -71,7 +71,7 @@ typedef struct revisit_queue{
 void enterScope();
 void exitScope();
 TabelaSimbolos *criarTabelaSimbolos();
-void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo);
+Simbolo* inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo);
 Simbolo *buscarNaTabela(TabelaSimbolos *table, const char *nome);
 void liberarTabelaSimbolos(TabelaSimbolos *table);
 
