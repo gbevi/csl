@@ -50,12 +50,14 @@ void inicializarTabelaBuiltins() {
 %token <char_val_token> CHAR_LITERAL
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
+%token SWITCH CASE DEFAULT END_CASE
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE_EXCLUSIVE RANGE_INCLUSIVE
 %token LPAREN RPAREN LBRACE RBRACE COMMA SEMICOLON
 %token AND OR NOT
 %token INT_TYPE FLOAT_TYPE STRING_TYPE CHAR_TYPE DOUBLE_TYPE
 
 %token EOL
+%token COMMENT
 
 %right ASSIGN
 %left  OR
@@ -80,6 +82,10 @@ void inicializarTabelaBuiltins() {
 %type <node> elsif_clause_list elsif_clause optional_else_part else_clause
 %type <node> optional_args optional_args_list optional_empty_paren
 %type <node> opt_terminators
+%type <node> switch_cases
+%type <node> switch_case_list
+%type <node> switch_case
+%type <node> optional_default_case
 
 %%
 
@@ -257,6 +263,18 @@ stmt:
     | RETURN { 
         $$ = criarNoReturn(NULL);
     }
+    | SWITCH expr EOL switch_cases END_CASE {
+        // Checagem de tipo do switch: só aceita int ou char
+        if ($2 && $2->type == CONST_NODE && $2->data) {
+            NoAST_Const *c = (NoAST_Const*)$2->data;
+            if (c->const_type != TIPO_INT && c->const_type != TIPO_CHAR) {
+                fprintf(stderr, "Erro semântico na linha %d: switch só aceita expressão do tipo int ou char.\n", yylineno);
+                tem_erro = 1;
+            }
+        }
+        $$ = criarNoSwitch($2, $4); // $4 = lista de cases
+    }
+    | COMMENT { /* Ignora comentários */ }
     ;
 
 optional_args: // para 'puts', 'print' (um unico argumento)
@@ -528,6 +546,24 @@ else_clause:
         // o último parâmetro é null porque else é o final da cadeia
         $$ = criarNoIfElseChain(ELSE_NODE, NULL, $3, NULL);
     }
+    ;
+
+switch_cases:
+    switch_case_list optional_default_case { $$ = criarNoSwitchCases($1, $2); }
+    ;
+
+switch_case_list:
+    switch_case switch_case_list { $$ = criarNoSwitchCaseList($1, $2); }
+    | /* vazio */ { $$ = NULL; }
+    ;
+
+switch_case:
+    CASE expr EOL statements { $$ = criarNoSwitchCase($2, $4); }
+    ;
+
+optional_default_case:
+    DEFAULT EOL statements { $$ = criarNoSwitchDefault($3); }
+    | /* vazio */ { $$ = NULL; }
     ;
 
 %%
