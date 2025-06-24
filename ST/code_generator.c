@@ -118,6 +118,7 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
                 case OP_MULTIPLICACAO: fprintf(saida, " * "); break;
                 case OP_DIVISAO: fprintf(saida, " / "); break;
             }
+            gerarExpressao(arithm_node->direita, saida); // Gera o lado direito
             fprintf(saida, ")");
             break;
         }
@@ -248,7 +249,40 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             fprintf(saida, "}\n");
             break;
         }
-        case FOR_IN_NODE:
+        case FOR_IN_NODE:{
+            NoAST_ForIn* for_node = (NoAST_ForIn*)no->data;
+            print_indent(saida);
+            
+            if (for_node->collection_expr->type == RANGE_NODE) {
+                NoAST_Range* range_node = (NoAST_Range*)for_node->collection_expr->data;
+                NoAST_Id* iter_id_node = (NoAST_Id*)for_node->iterator_id->data;
+                const char* iterator_name = iter_id_node->name;
+
+                fprintf(saida, "for (int %s = ", iterator_name);
+                gerarExpressao(range_node->start, saida);
+                fprintf(saida, "; ");
+
+                fprintf(saida, "%s %s ", iterator_name, (range_node->exclusive ? "<" : "<="));
+                gerarExpressao(range_node->end, saida);
+                fprintf(saida, "; ");
+
+                fprintf(saida, "%s++) {\n", iterator_name);
+
+                current_indent_level++;
+                gerarStatement(for_node->body, saida);
+                current_indent_level--;
+
+                print_indent(saida);
+                fprintf(saida, "}\n");
+
+            } else {
+                // Futuramente, aqui você pode tratar iteração sobre arrays, etc.
+                fprintf(stderr, "Erro de geracao: FOR_IN_NODE so suporta RANGE_NODE por enquanto.\n");
+                print_indent(saida);
+                fprintf(saida, "/* ERRO: TIPO DE COLECAO NAO SUPORTADA NO FOR */\n");
+            }
+            break;
+        }
         case FOR_HEADER_NODE:
         case WHILE_NODE:
         case RETURN_NODE:
