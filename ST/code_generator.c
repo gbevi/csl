@@ -275,16 +275,29 @@ static void gerarStatement(NoAST *no, FILE *saida) {
                 print_indent(saida);
                 fprintf(saida, "}\n");
 
-            } else {
-                // Futuramente, aqui você pode tratar iteração sobre arrays, etc.
-                fprintf(stderr, "Erro de geracao: FOR_IN_NODE so suporta RANGE_NODE por enquanto.\n");
-                print_indent(saida);
-                fprintf(saida, "/* ERRO: TIPO DE COLECAO NAO SUPORTADA NO FOR */\n");
             }
             break;
         }
+        case WHILE_NODE:{
+            NoAST_while* while_node = (NoAST_while*)no->data;
+
+            print_indent(saida);
+            fprintf(saida, "while (");
+
+            gerarExpressao(while_node->condition, saida);
+
+            fprintf(saida, ") {\n");
+
+            current_indent_level++;
+            gerarStatement(while_node->while_branch, saida);
+            current_indent_level--;
+
+            print_indent(saida);
+            fprintf(saida, "}\n");
+            break;
+        }
+
         case FOR_HEADER_NODE:
-        case WHILE_NODE:
         case RETURN_NODE:
         case FUNC_DEF_NODE: // definição de função
         default:
