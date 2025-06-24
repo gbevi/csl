@@ -1,6 +1,8 @@
 #ifndef  AST_H
 #define  AST_H
 
+#include "tabela.h"
+
 typedef enum {
     TIPO_INT,
     TIPO_FLOAT,
@@ -211,6 +213,8 @@ NoAST *criarNoReturn(NoAST *ret_val);
 void imprimirAST(NoAST *node, int indent);
 
 NoAST** convert_sequence_to_array(NoAST *sequence_node, int *count);
+
+const char* Node_Type_to_String(Node_Type type);
 
 
 #endif

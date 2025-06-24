@@ -206,43 +206,43 @@ static void gerarStatement(NoAST *no, FILE *saida) {
              fprintf(saida, ";\n");
              break;
         case IF_NODE:  {
-            NoAST_If *if_node = (NoAST_If *)no->data;
+            NoAST_if *if_node = (NoAST_if *)no->data;
             print_indent(saida);
             fprintf(saida, "if (");
-            gerarExpressao(if_node->condicao, saida);
+            gerarExpressao(if_node->condition, saida);
             fprintf(saida, ") {\n");
             current_indent_level++;
-            gerarStatement(if_node->corpo_if, saida);
+            gerarStatement(if_node->if_branch, saida);
             current_indent_level--;
             print_indent(saida);
             fprintf(saida, "}\n");
-            if (if_node->elsif_else_chain != NULL) {
-                gerarStatement(if_node->elsif_else_chain, saida);
+            if (if_node->next_branch != NULL) {
+                gerarStatement(if_node->next_branch, saida);
             }
             break;
         }
         case ELSIF_NODE: {
-            NoAST_If *elsif_node = (NoAST_If *)no->data;
+            NoAST_if *elsif_node = (NoAST_if *)no->data;
             print_indent(saida);
             fprintf(saida, "else if (");
-            gerarExpressao(elsif_node->condicao, saida);
+            gerarExpressao(elsif_node->condition, saida);
             fprintf(saida, ") {\n");
             current_indent_level++;
-            gerarStatement(elsif_node->corpo_if, saida);
+            gerarStatement(elsif_node->if_branch, saida);
             current_indent_level--;
             print_indent(saida);
             fprintf(saida, "}\n");
-            if (elsif_node->elsif_else_chain != NULL) {
-                gerarStatement(elsif_node->elsif_else_chain, saida);
+            if (elsif_node->next_branch != NULL) {
+                gerarStatement(elsif_node->next_branch, saida);
             }
             break;
         }
         case ELSE_NODE: {
-            NoAST_If *else_node = (NoAST_If *)no->data;
+            NoAST_if *else_node = (NoAST_if *)no->data;
             print_indent(saida);
             fprintf(saida, "else {\n");
             current_indent_level++;
-            gerarStatement(else_node->corpo_if, saida);
+            gerarStatement(else_node->if_branch, saida);
             current_indent_level--;
             print_indent(saida);
             fprintf(saida, "}\n");
