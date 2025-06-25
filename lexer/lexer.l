@@ -1,8 +1,19 @@
 %{
 #include "parser.tab.h"
 #include <stdio.h>
-#define _GNU_SOURCE
 #include <string.h>
+char *strndup(const char *s, size_t n) {
+    size_t len = strnlen(s, n);
+    char *new = malloc(len + 1);
+    if (!new) {
+        perror("Erro ao alocar memória para strndup"); 
+        return NULL;
+    }
+    memcpy(new, s, len);
+    new[len] = '\0';
+    return new;
+}
+
 %}
 
 %option yylineno
