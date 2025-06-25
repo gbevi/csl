@@ -50,14 +50,11 @@ void inicializarTabelaBuiltins() {
 %token <char_val_token> CHAR_LITERAL
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
-%token SWITCH CASE DEFAULT END_CASE
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE_EXCLUSIVE RANGE_INCLUSIVE
-%token LPAREN RPAREN LBRACE RBRACE COMMA SEMICOLON
+%token LPAREN RPAREN COMMA SEMICOLON
 %token AND OR NOT
-%token INT_TYPE FLOAT_TYPE STRING_TYPE CHAR_TYPE DOUBLE_TYPE
 
 %token EOL
-%token COMMENT
 
 %right ASSIGN
 %left  OR
@@ -68,7 +65,6 @@ void inicializarTabelaBuiltins() {
 %left  PLUS MINUS
 %left  MULTIPLY DIVIDE
 %right NOT
-%right UMINUS
 %nonassoc CALL
 %nonassoc LPAREN_GROUP
 
@@ -82,10 +78,6 @@ void inicializarTabelaBuiltins() {
 %type <node> elsif_clause_list elsif_clause optional_else_part else_clause
 %type <node> optional_args optional_args_list optional_empty_paren
 %type <node> opt_terminators
-%type <node> switch_cases
-%type <node> switch_case_list
-%type <node> switch_case
-%type <node> optional_default_case
 
 %%
 
@@ -117,98 +109,6 @@ stmt_terminator:
 
 stmt:
     expr  { $$ = $1; }
-    | INT_TYPE ID ASSIGN expr {
-        // Declaração de variável int
-        Simbolo *id_entry = buscarSimbolo($2);
-        if (id_entry) {
-            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
-            tem_erro = 1;
-            $$ = NULL;
-        } else {
-            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "int");
-            // Checagem de tipo: só aceita TIPO_INT
-            if ($4 && $4->type == CONST_NODE && $4->data) {
-                NoAST_Const *c = (NoAST_Const*)$4->data;
-                if (c->const_type != TIPO_INT) {
-                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável int '%s'.\n", yylineno, $2);
-                    tem_erro = 1;
-                }
-            }
-            $$ = criarNoAssign(id_entry, $4);
-        }
-    }
-    | FLOAT_TYPE ID ASSIGN expr {
-        Simbolo *id_entry = buscarSimbolo($2);
-        if (id_entry) {
-            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
-            tem_erro = 1;
-            $$ = NULL;
-        } else {
-            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "float");
-            if ($4 && $4->type == CONST_NODE && $4->data) {
-                NoAST_Const *c = (NoAST_Const*)$4->data;
-                if (c->const_type != TIPO_FLOAT && c->const_type != TIPO_DOUBLE) {
-                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável float '%s'.\n", yylineno, $2);
-                    tem_erro = 1;
-                }
-            }
-            $$ = criarNoAssign(id_entry, $4);
-        }
-    }
-    | STRING_TYPE ID ASSIGN expr {
-        Simbolo *id_entry = buscarSimbolo($2);
-        if (id_entry) {
-            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
-            tem_erro = 1;
-            $$ = NULL;
-        } else {
-            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "string");
-            if ($4 && $4->type == CONST_NODE && $4->data) {
-                NoAST_Const *c = (NoAST_Const*)$4->data;
-                if (c->const_type != TIPO_STRING) {
-                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável string '%s'.\n", yylineno, $2);
-                    tem_erro = 1;
-                }
-            }
-            $$ = criarNoAssign(id_entry, $4);
-        }
-    }
-    | CHAR_TYPE ID ASSIGN expr {
-        Simbolo *id_entry = buscarSimbolo($2);
-        if (id_entry) {
-            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
-            tem_erro = 1;
-            $$ = NULL;
-        } else {
-            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "char");
-            if ($4 && $4->type == CONST_NODE && $4->data) {
-                NoAST_Const *c = (NoAST_Const*)$4->data;
-                if (c->const_type != TIPO_CHAR) {
-                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável char '%s'.\n", yylineno, $2);
-                    tem_erro = 1;
-                }
-            }
-            $$ = criarNoAssign(id_entry, $4);
-        }
-    }
-    | DOUBLE_TYPE ID ASSIGN expr {
-        Simbolo *id_entry = buscarSimbolo($2);
-        if (id_entry) {
-            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
-            tem_erro = 1;
-            $$ = NULL;
-        } else {
-            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "double");
-            if ($4 && $4->type == CONST_NODE && $4->data) {
-                NoAST_Const *c = (NoAST_Const*)$4->data;
-                if (c->const_type != TIPO_DOUBLE && c->const_type != TIPO_FLOAT) {
-                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável double '%s'.\n", yylineno, $2);
-                    tem_erro = 1;
-                }
-            }
-            $$ = criarNoAssign(id_entry, $4);
-        }
-    }
     | PUTS optional_args        {
         Simbolo *puts_entry = buscarSimbolo("puts");
         if (!puts_entry) {
@@ -263,18 +163,6 @@ stmt:
     | RETURN { 
         $$ = criarNoReturn(NULL);
     }
-    | SWITCH expr EOL switch_cases END_CASE {
-        // Checagem de tipo do switch: só aceita int ou char
-        if ($2 && $2->type == CONST_NODE && $2->data) {
-            NoAST_Const *c = (NoAST_Const*)$2->data;
-            if (c->const_type != TIPO_INT && c->const_type != TIPO_CHAR) {
-                fprintf(stderr, "Erro semântico na linha %d: switch só aceita expressão do tipo int ou char.\n", yylineno);
-                tem_erro = 1;
-            }
-        }
-        $$ = criarNoSwitch($2, $4); // $4 = lista de cases
-    }
-    | COMMENT { /* Ignora comentários */ }
     ;
 
 optional_args: // para 'puts', 'print' (um unico argumento)
@@ -546,26 +434,7 @@ else_clause:
         // o último parâmetro é null porque else é o final da cadeia
         $$ = criarNoIfElseChain(ELSE_NODE, NULL, $3, NULL);
     }
-    ;
-
-switch_cases:
-    switch_case_list optional_default_case { $$ = criarNoSwitchCases($1, $2); }
-    ;
-
-switch_case_list:
-    switch_case switch_case_list { $$ = criarNoSwitchCaseList($1, $2); }
-    | /* vazio */ { $$ = NULL; }
-    ;
-
-switch_case:
-    CASE expr EOL statements { $$ = criarNoSwitchCase($2, $4); }
-    ;
-
-optional_default_case:
-    DEFAULT EOL statements { $$ = criarNoSwitchDefault($3); }
-    | /* vazio */ { $$ = NULL; }
-    ;
-
+    
 %%
 
 
