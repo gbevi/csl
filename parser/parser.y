@@ -53,12 +53,14 @@ void inicializarTabelaBuiltins() {
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE_EXCLUSIVE RANGE_INCLUSIVE
+%token PLUS_ASSIGN MINUS_ASSIGN
 %token LPAREN RPAREN LBRACE RBRACE COMMA SEMICOLON
 %token AND OR NOT
+%token INT_TYPE FLOAT_TYPE STRING_TYPE CHAR_TYPE DOUBLE_TYPE
 
 %token EOL
 
-%right ASSIGN
+%right ASSIGN PLUS_ASSIGN MINUS_ASSIGN
 %left  OR
 %left  AND
 %left  EQ NEQ
@@ -112,6 +114,98 @@ stmt_terminator:
 
 stmt:
     expr  { $$ = $1; }
+    | INT_TYPE ID ASSIGN expr {Add commentMore actions
+        // Declaração de variável int
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "int");
+            // Checagem de tipo: só aceita TIPO_INT
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_INT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável int '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | FLOAT_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "float");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_FLOAT && c->const_type != TIPO_DOUBLE) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável float '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | STRING_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "string");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_STRING) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável string '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | CHAR_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "char");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_CHAR) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável char '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | DOUBLE_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "double");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_DOUBLE && c->const_type != TIPO_FLOAT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável double '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
     | PUTS optional_args        {
         Simbolo *puts_entry = buscarSimbolo("puts");
         if (!puts_entry) {
@@ -286,6 +380,50 @@ expr:
                                     }
                                     $$ = criarNoAssign(id_entry, $3);
                                     free(var_name); 
+                                }
+    | ID MINUS_ASSIGN expr      {
+                                    char *var_name = strdup($1);
+                                    if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
+
+                                    Simbolo *id_entry = buscarSimbolo(var_name);
+                                    if (!id_entry) {
+                                        // Erro: não se pode usar -= em uma variável não definida.
+                                        fprintf(stderr, "Erro semântico na linha %d: Variável '%s' não definida para a operação '-='.\n", yylineno, var_name);
+                                        tem_erro = 1;
+                                        $$ = NULL; // Retorna NULL para evitar falhas na AST
+                                        free(var_name);
+                                    } else {
+                                        // Constrói a árvore para: ID = ID - expr
+                                        // 1. Cria um nó ID para o lado esquerdo da subtração
+                                        NoAST *var_node_rhs = criarNoId(strdup(var_name), id_entry);
+                                        // 2. Cria o nó de subtração (ID - expr)
+                                        NoAST *subtraction_node = criarNoArithm(OP_SUBTRACAO, var_node_rhs, $3);
+                                        // 3. Cria o nó de atribuição (ID = [resultado da subtração])
+                                        $$ = criarNoAssign(id_entry, subtraction_node);
+                                        free(var_name);
+                                    }
+                                }
+    | ID PLUS_ASSIGN expr       {
+                                    char *var_name = strdup($1);
+                                    if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
+
+                                    Simbolo *id_entry = buscarSimbolo(var_name);
+                                    if (!id_entry) {
+                                        // Erro: não se pode usar += em uma variável não definida.
+                                        fprintf(stderr, "Erro semântico na linha %d: Variável '%s' não definida para a operação '+='.\n", yylineno, var_name);
+                                        tem_erro = 1;
+                                        $$ = NULL; // Retorna NULL para evitar falhas na AST
+                                        free(var_name);
+                                    } else {
+                                        // Constrói a árvore para: ID = ID + expr
+                                        // 1. Cria um nó ID para o lado esquerdo da adição
+                                        NoAST *var_node_rhs = criarNoId(strdup(var_name), id_entry);
+                                        // 2. Cria o nó de adição (ID + expr)
+                                        NoAST *addition_node = criarNoArithm(OP_ADICAO, var_node_rhs, $3);
+                                        // 3. Cria o nó de atribuição (ID = [resultado da adição])
+                                        $$ = criarNoAssign(id_entry, addition_node);
+                                        free(var_name);
+                                    }
                                 }
     | expr PLUS expr            { $$ = criarNoArithm(OP_ADICAO, $1, $3); }
     | expr MINUS expr           { $$ = criarNoArithm(OP_SUBTRACAO, $1, $3); }
