@@ -427,6 +427,24 @@ void imprimirAST(NoAST *node, int indent) {
     }
 }
 
+const char* Node_Type_to_String(Node_Type type) {
+    switch(type) {
+        case BASIC_NODE: return "BASIC_NODE";
+        case ID_NODE: return "ID_NODE";
+        case CONST_NODE: return "CONST_NODE";
+        case ASSIGN_NODE: return "ASSIGN_NODE";
+        case ARITHM_NODE: return "ARITHM_NODE";
+        case LOGIC_OP_NODE: return "LOGIC_OP_NODE";
+        case REL_OP_NODE: return "REL_OP_NODE";
+        case IF_NODE: return "IF_NODE";
+        case ELSIF_NODE: return "ELSIF_NODE";
+        case ELSE_NODE: return "ELSE_NODE";
+        case FOR_IN_NODE: return "FOR_IN_NODE";
+        // Adicione outros casos conforme for testando
+        default: return "UNKNOWN_NODE";
+    }
+}
+
 /*
 void imprimirAST(NoAST *no) {
 

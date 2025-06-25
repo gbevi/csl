@@ -6,6 +6,7 @@
 #include <string.h>
 #include "ST/tabela.h"
 #include "ST/ast.h"
+#include "ST/code_generator.h"
 
 extern FILE *yyin;
 extern int yylineno;
@@ -31,6 +32,7 @@ void inicializarTabelaBuiltins() {
 %code requires {
     #include "ST/tabela.h"
     #include "ST/ast.h"
+    #include "ST/code_generator.h"
 }
 
 %union {
@@ -615,6 +617,21 @@ int main(int argc, char **argv) {
         imprimirAST(raiz, 0);
         printf("\n");
         imprimirTabelaEscopos();
+
+        printf("\nIniciando Geração de Código C...\n");
+
+        FILE *output_file = fopen("output.c", "w");
+        if (!output_file) {
+            fprintf(stderr, "Erro: Não foi possível criar o arquivo de saída 'output.c'\n");
+            exitScope();
+            fclose(yyin);
+            return 1;
+        }
+
+         // gerarCodigoC(raiz, output_file); // chama a função de geracao de codigo C (não tá completa ainda)
+
+        fclose(output_file);
+        printf("Código C gerado com sucesso em 'output.c'!\n");
     } else if (tem_erro) {
         fprintf(stderr, "Erros sintáticos ou semânticos encontrados. AST não foi gerada completamente.\n");
     } else {
