@@ -30,6 +30,10 @@ typedef struct {
     NoAST *body;         
 } NoAST_FuncDef;
 
+typedef struct {
+    NoAST *return_expr;  
+} NoAST_Return;
+
 static DeclaredVar *current_c_scope_declared_vars_head = NULL; // Cabeça da lista de vars declaradas no escopo C
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
@@ -327,7 +331,14 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             fprintf(saida, "}\n");
             break;
         }
-        case RETURN_NODE:
+        case RETURN_NODE: {
+            NoAST_Return* ret_node = (NoAST_Return*)no->data;
+            print_indent(saida);
+            fprintf(saida, "return ");
+            gerarExpressao(ret_node->return_expr, saida);
+            fprintf(saida, ";\n");
+            break;
+        }
         case FUNC_DEF_NODE: {
             NoAST_FuncDef* func_def = (NoAST_FuncDef*)no->data;
             NoAST_Id* id_node = (NoAST_Id*)func_def->func_id->data;
