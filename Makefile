@@ -10,8 +10,8 @@ BUILD_DIR = build
 # -I. para o diretório atual (onde o Makefile está)
 # -I$(BUILD_DIR) para onde parser.tab.h está
 # -IST para ast.h e tabela.h (que agora são incluídos diretamente sem o ST/ no nome)
-CFLAGS = -Wall -Wextra -g -I. -I$(BUILD_DIR) -IST
-LDFLAGS = -lfl -lm
+CFLAGS = -Wall -Wextra -g -I. -I$(BUILD_DIR) -IST -D_POSIX_C_SOURCE=200809L
+LDFLAGS = -lm
 
 # Nome do executável do compilador
 COMPILER_EXEC = $(BUILD_DIR)/meu_compilador
