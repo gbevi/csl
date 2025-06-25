@@ -17,6 +17,13 @@ typedef struct DeclaredVar {
     struct DeclaredVar *next;
 } DeclaredVar;
 
+typedef struct {
+    NoAST *init;   
+    NoAST *cond;  
+    NoAST *iter;  
+    NoAST *body;   
+} NoAST_ForHeader;
+
 static DeclaredVar *current_c_scope_declared_vars_head = NULL; // Cabeça da lista de vars declaradas no escopo C
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
@@ -297,7 +304,23 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             break;
         }
 
-        case FOR_HEADER_NODE:
+        case FOR_HEADER_NODE: {
+            NoAST_ForHeader* for_node = (NoAST_ForHeader*)no->data;
+            print_indent(saida);
+            fprintf(saida, "for (");
+            gerarStatement(for_node->init, saida);
+            fprintf(saida, " ");
+            gerarExpressao(for_node->cond, saida);
+            fprintf(saida, "; ");
+            gerarStatement(for_node->iter, saida);
+            fprintf(saida, ") {\n");
+            current_indent_level++;
+            gerarStatement(for_node->body, saida);
+            current_indent_level--;
+            print_indent(saida);
+            fprintf(saida, "}\n");
+            break;
+        }
         case RETURN_NODE:
         case FUNC_DEF_NODE: // definição de função
         default:
