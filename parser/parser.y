@@ -54,6 +54,7 @@ void inicializarTabelaBuiltins() {
 %token PLUS_ASSIGN MINUS_ASSIGN
 %token LPAREN RPAREN LBRACE RBRACE COMMA SEMICOLON
 %token AND OR NOT
+%token INT_TYPE FLOAT_TYPE STRING_TYPE CHAR_TYPE DOUBLE_TYPE
 
 %token EOL
 
@@ -111,6 +112,98 @@ stmt_terminator:
 
 stmt:
     expr  { $$ = $1; }
+    | INT_TYPE ID ASSIGN expr {Add commentMore actions
+        // Declaração de variável int
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "int");
+            // Checagem de tipo: só aceita TIPO_INT
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_INT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável int '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | FLOAT_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "float");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_FLOAT && c->const_type != TIPO_DOUBLE) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável float '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | STRING_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "string");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_STRING) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável string '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | CHAR_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "char");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_CHAR) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável char '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | DOUBLE_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            id_entry = inserirNaTabela(current_scope->symbol_table, $2, "double");
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_DOUBLE && c->const_type != TIPO_FLOAT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável double '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
     | PUTS optional_args        {
         Simbolo *puts_entry = buscarSimbolo("puts");
         if (!puts_entry) {
