@@ -24,6 +24,12 @@ typedef struct {
     NoAST *body;   
 } NoAST_ForHeader;
 
+typedef struct {
+    NoAST *func_id;      
+    NoAST *param_list;   
+    NoAST *body;         
+} NoAST_FuncDef;
+
 static DeclaredVar *current_c_scope_declared_vars_head = NULL; // Cabeça da lista de vars declaradas no escopo C
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
@@ -322,7 +328,25 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             break;
         }
         case RETURN_NODE:
-        case FUNC_DEF_NODE: // definição de função
+        case FUNC_DEF_NODE: {
+            NoAST_FuncDef* func_def = (NoAST_FuncDef*)no->data;
+            NoAST_Id* id_node = (NoAST_Id*)func_def->func_id->data;
+            fprintf(saida, "void %s(", id_node->name);
+            NoAST* param = func_def->param_list;
+            while (param) {
+                NoAST_Id* param_id = (NoAST_Id*)param->esquerda->data;
+                fprintf(saida, "int %s", param_id->name);
+                if (param->direita != NULL) fprintf(saida, ", ");
+                param = param->direita;
+            }
+            fprintf(saida, ") {\n");
+            current_indent_level++;
+            clearDeclaredVars();
+            gerarStatement(func_def->body, saida);
+            current_indent_level--;
+            fprintf(saida, "}\n\n");
+            break;
+        }
         default:
             fprintf(stderr, "Erro na geracao de codigo: Tipo de statement desconhecido ou não implementado (%d)\n", no->type);
             print_indent(saida);
