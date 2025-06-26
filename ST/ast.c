@@ -584,5 +584,5 @@ char* gerarTAC(NoAST *no) {
 		ast_print_node(no);
 	}
 }
-
-*/
+adicionando diferença
+*/ 

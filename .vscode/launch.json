@@ -6,8 +6,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/gabrielbevilaqua/Desktop/workspace/csl/build",
-      "program": "/Users/gabrielbevilaqua/Desktop/workspace/csl/build/build/Debug/outDebug"
+      "cwd": "/Users/gabrielbevilaqua/Desktop/workspace/csl",
+      "program": "/Users/gabrielbevilaqua/Desktop/workspace/csl/build/Debug/outDebug"
     }
   ]
 }
