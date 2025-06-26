@@ -8,6 +8,7 @@
 
 typedef struct Parametro {
     char nome[MAX_NOME_LEN];
+    char tipo[MAX_TIPO_LEN];
     struct Parametro *prox;
 } Parametro;
 
@@ -20,8 +21,7 @@ typedef struct Simbolo {
     char nome[MAX_NOME_LEN];
     char tipo[MAX_TIPO_LEN];
 	char return_type[MAX_RETURN_TYPE_LEN];
-	struct Simbolo **parameters;
-    Parametro *params; // Cabeça da lista de parâmetros para funcoes 
+	Parametro *parameters;  // Cabeça da lista de parâmetros para funcoes 
 	int num_parameters;
     struct Simbolo *prox;
 } Simbolo;
@@ -76,6 +76,7 @@ Simbolo *buscarSimbolo(char *nome);
 void imprimirTabelaEscopos();
 
 void register_function_parameters(Simbolo *func_entry, Parametro *param_head);
+
 
 /*
 static list_t **hash_table;
