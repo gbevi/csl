@@ -2,16 +2,13 @@
 #define TABELA_H
 #define SIZE 211
 #define MAXTOKENLEN 40
-#define BY_VALUE 1
-#define BY_REFER 2
-#define PARAM_CHECK 1
-
 #define MAX_NOME_LEN 50
 #define MAX_TIPO_LEN 50
 #define MAX_RETURN_TYPE_LEN 50 
 
 typedef struct Parametro {
     char nome[MAX_NOME_LEN];
+    char tipo[MAX_TIPO_LEN];
     struct Parametro *prox;
 } Parametro;
 
@@ -24,7 +21,7 @@ typedef struct Simbolo {
     char nome[MAX_NOME_LEN];
     char tipo[MAX_TIPO_LEN];
 	char return_type[MAX_RETURN_TYPE_LEN];
-	struct Simbolo **parameters;   
+	Parametro *parameters;  // Cabeça da lista de parâmetros para funcoes 
 	int num_parameters;
     struct Simbolo *prox;
 } Simbolo;
@@ -79,6 +76,7 @@ Simbolo *buscarSimbolo(char *nome);
 void imprimirTabelaEscopos();
 
 void register_function_parameters(Simbolo *func_entry, Parametro *param_head);
+
 
 /*
 static list_t **hash_table;

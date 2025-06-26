@@ -6,6 +6,7 @@
 #include <string.h>
 #include "ST/tabela.h"
 #include "ST/ast.h"
+#include "ST/code_generator.h"
 
 extern FILE *yyin;
 extern int yylineno;
@@ -31,6 +32,7 @@ void inicializarTabelaBuiltins() {
 %code requires {
     #include "ST/tabela.h"
     #include "ST/ast.h"
+    #include "ST/code_generator.h"
 }
 
 %union {
@@ -51,12 +53,14 @@ void inicializarTabelaBuiltins() {
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE_EXCLUSIVE RANGE_INCLUSIVE
-%token LPAREN RPAREN COMMA SEMICOLON
+%token PLUS_ASSIGN MINUS_ASSIGN
+%token LPAREN RPAREN LBRACE RBRACE COMMA SEMICOLON
 %token AND OR NOT
+%token INT_TYPE FLOAT_TYPE STRING_TYPE CHAR_TYPE DOUBLE_TYPE
 
 %token EOL
 
-%right ASSIGN
+%right ASSIGN PLUS_ASSIGN MINUS_ASSIGN
 %left  OR
 %left  AND
 %left  EQ NEQ
@@ -65,12 +69,14 @@ void inicializarTabelaBuiltins() {
 %left  PLUS MINUS
 %left  MULTIPLY DIVIDE
 %right NOT
+%right UMINUS
 %nonassoc CALL
 %nonassoc LPAREN_GROUP
 
 %type <node> program statements statements_list stmt expr
 %type <param_list_head> param_list param
-%type <node> func_call for_init_block func_declaration_and_scope
+%type <symtab_item> func_declaration_and_scope
+%type <node> func_call for_init_block 
 %type <node> expr_list
 %type <node> atom_expr
 %type <node> call_or_id_expr 
@@ -84,7 +90,7 @@ void inicializarTabelaBuiltins() {
 // permite um programa com statements ou vazio antes do EOF
 program:
     statements YYEOF { raiz = $1; } 
- ;
+    ;
 
 // zero ou mais statements, cada um com seus terminadores
 statements:
@@ -109,6 +115,103 @@ stmt_terminator:
 
 stmt:
     expr  { $$ = $1; }
+    | INT_TYPE ID ASSIGN expr {
+        // Declaração de variável int
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            inserirNaTabela(current_scope->symbol_table, $2, "int");
+            Simbolo *id_entry = buscarSimbolo($2);
+            // Checagem de tipo: só aceita TIPO_INT
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_INT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável int '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | FLOAT_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            inserirNaTabela(current_scope->symbol_table, $2, "float");
+            id_entry = buscarSimbolo($2);
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_FLOAT && c->const_type != TIPO_DOUBLE) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável float '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | STRING_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            inserirNaTabela(current_scope->symbol_table, $2, "string");
+            id_entry = buscarSimbolo($2);
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_STRING) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável string '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | CHAR_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            inserirNaTabela(current_scope->symbol_table, $2, "char");
+            id_entry = buscarSimbolo($2);
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_CHAR) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável char '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
+    | DOUBLE_TYPE ID ASSIGN expr {
+        Simbolo *id_entry = buscarSimbolo($2);
+        if (id_entry) {
+            fprintf(stderr, "Erro semântico na linha %d: Variável '%s' já declarada.\n", yylineno, $2);
+            tem_erro = 1;
+            $$ = NULL;
+        } else {
+            inserirNaTabela(current_scope->symbol_table, $2, "double");
+            id_entry = buscarSimbolo($2);
+            if ($4 && $4->type == CONST_NODE && $4->data) {
+                NoAST_Const *c = (NoAST_Const*)$4->data;
+                if (c->const_type != TIPO_DOUBLE && c->const_type != TIPO_FLOAT) {
+                    fprintf(stderr, "Erro semântico na linha %d: Atribuição de tipo incompatível para variável double '%s'.\n", yylineno, $2);
+                    tem_erro = 1;
+                }
+            }
+            $$ = criarNoAssign(id_entry, $4);
+        }
+    }
     | PUTS optional_args        {
         Simbolo *puts_entry = buscarSimbolo("puts");
         if (!puts_entry) {
@@ -193,7 +296,7 @@ for_init_block:
         Simbolo *loop_item_entry = buscarNaTabela(current_scope->symbol_table, for_var_name);
         if (!loop_item_entry) {
             fprintf(stderr, "Erro interno CRITICO: Simbolo '%s' nao encontrado APOS insercao no escopo FOR (linha %d).\n", for_var_name, yylineno);
-            tem_erro = 1; $$ = NULL; free(for_var_name); exitScope(); return;
+            tem_erro = 1; $$ = NULL; free(for_var_name); exitScope(); YYABORT;
         }
 
         $$ = criarNo(FOR_HEADER_NODE, criarNoId(strdup(for_var_name), loop_item_entry), $3);
@@ -205,7 +308,7 @@ func_declaration_and_scope:
     ID LPAREN param_list RPAREN // consome o nome da func e a lista de parâmetros
     {
         char *func_name = strdup($1);
-        if (!func_name) { yyerror("Memory allocation error."); YYABORT; return NULL; }
+        if (!func_name) { yyerror("Memory allocation error."); YYABORT; }
 
         // registra o nome da função no escopo atual
         Simbolo *func_entry = buscarSimbolo(func_name);
@@ -213,15 +316,15 @@ func_declaration_and_scope:
             // se o símbolo já existe e é ou não é uma função
             if (strcmp(func_entry->tipo, "function") != 0 && strcmp(func_entry->tipo, "builtin_function") != 0) {
                 fprintf(stderr, "Erro semântico na linha %d: O nome '%s' já está em uso como '%s'. Redefinição como função não permitida.\n", yylineno, func_name, func_entry->tipo);
-                tem_erro = 1; $$ = NULL; free(func_name); YYABORT; return NULL;
+                tem_erro = 1; $$ = NULL; free(func_name); YYABORT;
             }
             fprintf(stderr, "Erro semântico na linha %d: Função '%s' já declarada. Redefinição não permitida.\n", yylineno, func_name);
-            tem_erro = 1; $$ = NULL; free(func_name); YYABORT; return NULL;
+            tem_erro = 1; $$ = NULL; free(func_name); YYABORT;
         } else {
             // insere o nome da função na tabela de símbolos do escopo global
             inserirNaTabela(current_scope->symbol_table, func_name, "function");
             func_entry = buscarSimbolo(func_name); 
-            if (!func_entry) { fprintf(stderr, "Erro interno: Símbolo '%s' da funcao nao encontrado APOS insercao (linha %d).\n", func_name, yylineno); tem_erro = 1; YYABORT; return NULL; }
+            if (!func_entry) { fprintf(stderr, "Erro interno: Símbolo '%s' da funcao nao encontrado APOS insercao (linha %d).\n", func_name, yylineno); tem_erro = 1; YYABORT; }
             func_entry->parameters = $3;
             $$ = func_entry;
             free(func_name);
@@ -284,6 +387,50 @@ expr:
                                     $$ = criarNoAssign(id_entry, $3);
                                     free(var_name); 
                                 }
+    | ID MINUS_ASSIGN expr      {
+                                    char *var_name = strdup($1);
+                                    if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
+
+                                    Simbolo *id_entry = buscarSimbolo(var_name);
+                                    if (!id_entry) {
+                                        // Erro: não se pode usar -= em uma variável não definida.
+                                        fprintf(stderr, "Erro semântico na linha %d: Variável '%s' não definida para a operação '-='.\n", yylineno, var_name);
+                                        tem_erro = 1;
+                                        $$ = NULL; // Retorna NULL para evitar falhas na AST
+                                        free(var_name);
+                                    } else {
+                                        // Constrói a árvore para: ID = ID - expr
+                                        // 1. Cria um nó ID para o lado esquerdo da subtração
+                                        NoAST *var_node_rhs = criarNoId(strdup(var_name), id_entry);
+                                        // 2. Cria o nó de subtração (ID - expr)
+                                        NoAST *subtraction_node = criarNoArithm(OP_SUBTRACAO, var_node_rhs, $3);
+                                        // 3. Cria o nó de atribuição (ID = [resultado da subtração])
+                                        $$ = criarNoAssign(id_entry, subtraction_node);
+                                        free(var_name);
+                                    }
+                                }
+    | ID PLUS_ASSIGN expr       {
+                                    char *var_name = strdup($1);
+                                    if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
+
+                                    Simbolo *id_entry = buscarSimbolo(var_name);
+                                    if (!id_entry) {
+                                        // Erro: não se pode usar += em uma variável não definida.
+                                        fprintf(stderr, "Erro semântico na linha %d: Variável '%s' não definida para a operação '+='.\n", yylineno, var_name);
+                                        tem_erro = 1;
+                                        $$ = NULL; // Retorna NULL para evitar falhas na AST
+                                        free(var_name);
+                                    } else {
+                                        // Constrói a árvore para: ID = ID + expr
+                                        // 1. Cria um nó ID para o lado esquerdo da adição
+                                        NoAST *var_node_rhs = criarNoId(strdup(var_name), id_entry);
+                                        // 2. Cria o nó de adição (ID + expr)
+                                        NoAST *addition_node = criarNoArithm(OP_ADICAO, var_node_rhs, $3);
+                                        // 3. Cria o nó de atribuição (ID = [resultado da adição])
+                                        $$ = criarNoAssign(id_entry, addition_node);
+                                        free(var_name);
+                                    }
+                                }
     | expr PLUS expr            { $$ = criarNoArithm(OP_ADICAO, $1, $3); }
     | expr MINUS expr           { $$ = criarNoArithm(OP_SUBTRACAO, $1, $3); }
     | expr MULTIPLY expr        { $$ = criarNoArithm(OP_MULTIPLICACAO, $1, $3); }
@@ -308,7 +455,7 @@ atom_expr: // pra expressões literais
     | FLOAT_LITERAL             { $$ = criarNoConst(TIPO_DOUBLE, (Value){.valfloat = $1}); }
     | BOOL_LITERAL              { $$ = criarNoConst(TIPO_BOOLEAN, (Value){.valint = $1}); }
     | CHAR_LITERAL              { $$ = criarNoConst(TIPO_CHAR, (Value){.valchar = $1}); }
-   ;
+    ;
 
 // call_or_id_expr foi criado para elimitar o shift/reduce q estava sendo
 // causado porque o bison estava enxergando ambiguidades em ID e ID LPAREN
@@ -367,7 +514,7 @@ func_call:
 expr_list: // lista de expressoes (para argumentos de funções)
     expr                     { $$ = criarNoExprList($1, NULL); }
     | expr_list COMMA expr   { $$ = criarNoExprList($3, $1); }
-   ;
+    ;
 
 // regras para IF/ELSIF/ELSE
 elsif_else_parts:
@@ -410,7 +557,7 @@ elsif_clause_list:
     |   {
         $$ = NULL; 
     }
-   ;
+    ;
 
 // regra para uma unica clausula ELSIF
 elsif_clause:
@@ -434,7 +581,8 @@ else_clause:
         // o último parâmetro é null porque else é o final da cadeia
         $$ = criarNoIfElseChain(ELSE_NODE, NULL, $3, NULL);
     }
-    
+    ;
+
 %%
 
 
@@ -475,6 +623,21 @@ int main(int argc, char **argv) {
         imprimirAST(raiz, 0);
         printf("\n");
         imprimirTabelaEscopos();
+
+        printf("\nIniciando Geração de Código C...\n");
+
+        FILE *output_file = fopen("output.c", "w");
+        if (!output_file) {
+            fprintf(stderr, "Erro: Não foi possível criar o arquivo de saída 'output.c'\n");
+            exitScope();
+            fclose(yyin);
+            return 1;
+        }
+
+         // gerarCodigoC(raiz, output_file); // chama a função de geracao de codigo C (não tá completa ainda)
+
+        fclose(output_file);
+        printf("Código C gerado com sucesso em 'output.c'!\n");
     } else if (tem_erro) {
         fprintf(stderr, "Erros sintáticos ou semânticos encontrados. AST não foi gerada completamente.\n");
     } else {
