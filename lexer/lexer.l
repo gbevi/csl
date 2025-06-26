@@ -13,7 +13,6 @@ char *strndup(const char *s, size_t n) {
     new[len] = '\0';
     return new;
 }
-
 %}
 
 %option yylineno
