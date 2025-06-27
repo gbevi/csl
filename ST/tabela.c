@@ -23,7 +23,7 @@ void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) 
         fprintf(stderr, "Erro: Tabela de símbolos nula ao tentar inserir '%s'.\n", nome);
         return;
     }
-    printf("DEBUG TS: [inserirNaTabela] Tentando inserir '%s' (tipo: %s) na tabela %p (head: %p)\n", nome, tipo, (void*)table, (void*)table->head);
+    // printf("DEBUG TS: [inserirNaTabela] Tentando inserir '%s' (tipo: %s) na tabela %p (head: %p)\n", nome, tipo, (void*)table, (void*)table->head);
 
     Simbolo *novo = malloc(sizeof(Simbolo));
     if (!novo) {
@@ -47,25 +47,25 @@ void inserirNaTabela(TabelaSimbolos *table, const char *nome, const char *tipo) 
     // Adiciona o novo símbolo no início da lista encadeada da tabela
     novo->prox = table->head;
     table->head = novo;
-    printf("DEBUG TS: [inserirNaTabela] '%s' INSERIDO. Nova head da tabela %p: %p\n", nome, (void*)table, (void*)table->head);
+    //printf("DEBUG TS: [inserirNaTabela] '%s' INSERIDO. Nova head da tabela %p: %p\n", nome, (void*)table, (void*)table->head);
 }
 
 // Busca um símbolo em uma tabela de símbolos específica
 Simbolo *buscarNaTabela(TabelaSimbolos *table, const char *nome) {
-    printf("DEBUG TS: [buscarNaTabela] Buscando '%s' na tabela %p (head: %p)\n", nome, (void*)table, (void*)table->head);
+    //printf("DEBUG TS: [buscarNaTabela] Buscando '%s' na tabela %p (head: %p)\n", nome, (void*)table, (void*)table->head);
     if (!table) {
-        printf("DEBUG TS: [buscarNaTabela] Tabela de símbolos nula.\n");
+        //printf("DEBUG TS: [buscarNaTabela] Tabela de símbolos nula.\n");
         return NULL;
     }
     // Percorre a lista de símbolos na tabela
     for (Simbolo *s = table->head; s; s = s->prox) {
-        printf("DEBUG TS: [buscarNaTabela] Comparando '%s' com '%s'\n", nome, s->nome);
+        //printf("DEBUG TS: [buscarNaTabela] Comparando '%s' com '%s'\n", nome, s->nome);
         if (strcmp(s->nome, nome) == 0) {
-            printf("DEBUG TS: [buscarNaTabela] '%s' ENCONTRADO na tabela %p.\n", nome, (void*)table);
+            //printf("DEBUG TS: [buscarNaTabela] '%s' ENCONTRADO na tabela %p.\n", nome, (void*)table);
             return s; // Símbolo encontrado
         }
     }
-    printf("DEBUG TS: [buscarNaTabela] '%s' NAO ENCONTRADO nesta tabela.\n", nome);
+    //printf("DEBUG TS: [buscarNaTabela] '%s' NAO ENCONTRADO nesta tabela.\n", nome);
     return NULL; // Símbolo não encontrado
 }
 
@@ -94,18 +94,18 @@ void liberarTabelaSimbolos(TabelaSimbolos *table) {
 
 // Busca um símbolo começando do escopo atual e subindo na cadeia de escopos
 Simbolo *buscarSimbolo(char *nome) {
-    printf("DEBUG TS: [buscarSimbolo] Buscando '%s' a partir do escopo atual (nivel %d).\n", nome, current_scope ? current_scope->level : -1);
+    //printf("DEBUG TS: [buscarSimbolo] Buscando '%s' a partir do escopo atual (nivel %d).\n", nome, current_scope ? current_scope->level : -1);
     Scope *temp_scope = current_scope;
     while (temp_scope != NULL) {
-        printf("DEBUG TS: [buscarSimbolo] Verificando escopo nivel %d (tabela %p).\n", temp_scope->level, (void*)temp_scope->symbol_table);
+        //printf("DEBUG TS: [buscarSimbolo] Verificando escopo nivel %d (tabela %p).\n", temp_scope->level, (void*)temp_scope->symbol_table);
         Simbolo *simbolo = buscarNaTabela(temp_scope->symbol_table, nome);
         if (simbolo != NULL) {
-            printf("DEBUG TS: [buscarSimbolo] '%s' ENCONTRADO no escopo nivel %d.\n", nome, temp_scope->level);
+            // printf("DEBUG TS: [buscarSimbolo] '%s' ENCONTRADO no escopo nivel %d.\n", nome, temp_scope->level);
             return simbolo; // Símbolo encontrado no escopo atual ou em um pai
         }
         temp_scope = temp_scope->parent; // Sobe para o escopo pai
     }
-    printf("DEBUG TS: [buscarSimbolo] '%s' NAO ENCONTRADO em nenhum escopo.\n", nome);
+    //printf("DEBUG TS: [buscarSimbolo] '%s' NAO ENCONTRADO em nenhum escopo.\n", nome);
     return NULL; // Símbolo não encontrado em nenhum escopo acessível
 }
 
@@ -159,7 +159,7 @@ void enterScope() {
     new_scope->symbol_table = criarTabelaSimbolos(); // Cria uma nova tabela para este escopo
     new_scope->parent = current_scope; // Define o escopo anterior como pai
     current_scope = new_scope;         // Define que este é o novo escopo atual
-    fprintf(stderr, "DEBUG: Entrou no novo escopo. Nivel: %d\n", current_scope->level);
+    //fprintf(stderr, "DEBUG: Entrou no novo escopo. Nivel: %d\n", current_scope->level);
 }
 
 // Sai do escopo atual
@@ -172,7 +172,7 @@ void exitScope() {
     current_scope = current_scope->parent; // Volta para o escopo pai
     liberarTabelaSimbolos(old_scope->symbol_table); // Libera a tabela de símbolos do escopo que está saindo
     free(old_scope); // Libera a struct Scope
-    fprintf(stderr, "DEBUG: Saiu do escopo. Nivel: %d\n", current_scope ? current_scope->level : -1);
+    //fprintf(stderr, "DEBUG: Saiu do escopo. Nivel: %d\n", current_scope ? current_scope->level : -1);
 }
 
 // Registra os parâmetros de uma função no seu Simbolo correspondente
@@ -194,6 +194,6 @@ void register_function_parameters(Simbolo *func_entry, Parametro *param_head) {
     }
     func_entry->num_parameters = count;
 
-    printf("DEBUG TS: [register_function_parameters] Registrados %d parâmetros para a função '%s'.\n",
-           func_entry->num_parameters, func_entry->nome);
+    //printf("DEBUG TS: [register_function_parameters] Registrados %d parâmetros para a função '%s'.\n",
+    //       func_entry->num_parameters, func_entry->nome);
 }

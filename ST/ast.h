@@ -79,6 +79,8 @@ typedef struct NoAST {
                     // precisam de data
 } NoAST;
 
+extern NoAST *raiz; 
+
 typedef struct NoAST_Const{
     Node_Type type;
     DataType const_type;
@@ -132,17 +134,18 @@ typedef struct NoAST_incr{
 	int pf_type; 
 }NoAST_incr;
 
-typedef struct NoAST_Func_Call{
-	Node_Type type; 
-	Simbolo *entry;
-	struct NoAST *args;	
-}NoAST_Func_Call;
-
 typedef struct NoExprList {
     Node_Type tipo_no; 
     struct NoAST *expr; 
     struct NoAST *next; 
 }No_Expr_List;
+
+typedef struct NoAST_Func_Call {
+    Simbolo *entry;
+    No_Expr_List* args_list_head;
+} NoAST_Func_Call;
+
+
 
 typedef struct NoAST_FuncDef {
     Node_Type type; 
