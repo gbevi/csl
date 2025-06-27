@@ -1,5 +1,5 @@
 %{
-//#define YYDEBUG 1
+#define YYDEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,7 @@ int tem_erro = 0;
 
 void yyerror(const char *s);
 int yylex(void);
-NoAST *raiz;
+extern NoAST *raiz;
 
 void inicializarTabelaBuiltins() {
     if (current_scope == NULL || current_scope->symbol_table == NULL) {
@@ -36,20 +36,20 @@ void inicializarTabelaBuiltins() {
 }
 
 %union {
-    char char_val_token;
-    int int_val_token;  
-    double double_val_token;
-    char* str_val_token; 
+    char char_val;
+    int int_val;
+    double double_val;
+    char* string_val;
 
+    NoAST* ast_node; 
     Simbolo* symtab_item;
-    NoAST* node;
     Parametro* param_list_head;
 }
 
-%token <str_val_token> STRING ID
-%token <int_val_token> NUM BOOL_LITERAL
-%token <double_val_token> FLOAT_LITERAL
-%token <char_val_token> CHAR_LITERAL
+%token <string_val> STRING ID
+%token <int_val> NUM BOOL_LITERAL
+%token <double_val> FLOAT_LITERAL
+%token <char_val> CHAR_LITERAL
 
 %token PUTS PRINT GETS IF ELSE ELSIF WHILE FOR IN DO END DEF RETURN
 %token EQ NEQ LE GE LT GT ASSIGN PLUS MINUS MULTIPLY DIVIDE RANGE_EXCLUSIVE RANGE_INCLUSIVE
@@ -73,23 +73,34 @@ void inicializarTabelaBuiltins() {
 %nonassoc CALL
 %nonassoc LPAREN_GROUP
 
-%type <node> program statements statements_list stmt expr
-%type <param_list_head> param_list param
+%type <ast_node> program statements statements_list stmt expr
+%type <ast_node> func_call for_init_block
+%type <ast_node> expr_list
+%type <ast_node> atom_expr
+%type <ast_node> call_or_id_expr
+%type <ast_node> elsif_else_parts
+%type <ast_node> elsif_clause_list elsif_clause optional_else_part else_clause
+%type <ast_node> optional_args optional_args_list optional_empty_paren
+%type <ast_node> opt_terminators
+%type <ast_node> opt_leading_eols
+%type <ast_node> optional_body_statements
+
 %type <symtab_item> func_declaration_and_scope
-%type <node> func_call for_init_block 
-%type <node> expr_list
-%type <node> atom_expr
-%type <node> call_or_id_expr 
-%type <node> elsif_else_parts
-%type <node> elsif_clause_list elsif_clause optional_else_part else_clause
-%type <node> optional_args optional_args_list optional_empty_paren
-%type <node> opt_terminators
+%type <param_list_head> param_list param 
 
 %%
 
 // permite um programa com statements ou vazio antes do EOF
 program:
-    statements YYEOF { raiz = $1; } 
+    opt_leading_eols statements YYEOF {
+        raiz = $2; // $2 já é um NoAST* por causa de %type <ast_node> statements
+        fprintf(stderr, "DEBUG-PARSER: Raiz da AST final atribuida a 'raiz': %p\n", (void*)raiz);
+    }
+;
+
+opt_leading_eols:
+    { $$ = NULL; }
+    | opt_leading_eols EOL { $$ = NULL; }
     ;
 
 // zero ou mais statements, cada um com seus terminadores
@@ -253,11 +264,13 @@ stmt:
     | WHILE expr DO EOL statements END {
         $$ = criarNoWhile($2, $5);
     }
-    | DEF func_declaration_and_scope EOL statements END
+    | DEF func_declaration_and_scope EOL optional_body_statements opt_terminators END
     {
-        Simbolo *func_entry = $2;
-        Parametro *params = func_entry->parameters; 
-        $$ = criarNoFuncDef(func_entry, params, $4);
+        Simbolo *func_entry = $2; 
+        Parametro *params = func_entry->parameters;
+        NoAST *body = $4;
+        
+        $$ = criarNoFuncDef(func_entry, params, body);
         exitScope();
     }
     | RETURN expr {
@@ -268,10 +281,20 @@ stmt:
     }
     ;
 
+
 optional_args: // para 'puts', 'print' (um unico argumento)
-    expr               { $$ = $1; } // ex: puts "hello"
-    | LPAREN expr RPAREN { $$ = $2; } // ex: puts("hello")
-    ;
+    expr               {
+        fprintf(stderr, "DEBUG-PARSER: optional_args: $1 (expr) antes de criarNoExprList: %p\n", (void*)$1);
+        $$ = criarNoExprList($1, NULL); // $1 é ast_node
+        fprintf(stderr, "DEBUG-PARSER: optional_args: $$ (EXPR_LIST_NODE) apos criarNoExprList: %p\n", (void*)$$);
+    }
+    | LPAREN expr RPAREN {
+        fprintf(stderr, "DEBUG-PARSER: optional_args: $2 (expr) antes de criarNoExprList (com paren): %p\n", (void*)$2);
+        $$ = criarNoExprList($2, NULL); // $2 é ast_node
+        fprintf(stderr, "DEBUG-PARSER: optional_args: $$ (EXPR_LIST_NODE) apos criarNoExprList (com paren): %p\n", (void*)$$);
+    }
+;
+
 
 optional_args_list: // para 'print' (lista de argumentos)
     expr_list               { $$ = $1; } // ex: print "a", "b"
@@ -282,6 +305,10 @@ optional_empty_paren: // para 'gets' (parênteses vazios opcionais)
     { $$ = NULL; } // ex: gets
     | LPAREN RPAREN    { $$ = NULL; } // ex: gets()
     ;
+
+optional_body_statements:
+    statements { $$ = $1; } // pode ter statements (uma lista, ou vazio)
+;
 
 for_init_block:
     ID IN expr DO EOL 
@@ -309,7 +336,7 @@ func_declaration_and_scope:
     {
         char *func_name = strdup($1);
         if (!func_name) { yyerror("Memory allocation error."); YYABORT; }
-
+        
         // registra o nome da função no escopo atual
         Simbolo *func_entry = buscarSimbolo(func_name);
         if (func_entry != NULL) {
@@ -327,8 +354,9 @@ func_declaration_and_scope:
             if (!func_entry) { fprintf(stderr, "Erro interno: Símbolo '%s' da funcao nao encontrado APOS insercao (linha %d).\n", func_name, yylineno); tem_erro = 1; YYABORT; }
             func_entry->parameters = $3;
             $$ = func_entry;
-            free(func_name);
         }
+
+        free(func_name);
 
         // entra no escopo da função
         enterScope();
@@ -375,18 +403,53 @@ param:
 expr:
     atom_expr
     | call_or_id_expr
-    | ID ASSIGN expr            {
-                                    char *var_name = strdup($1);
-                                    if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
+    | ID ASSIGN expr {
+                        char *var_name = strdup($1);
+                        if (!var_name) {
+                            yyerror("Erro de alocação de memória para nome da variável.");
+                            YYABORT;
+                        }
 
-                                    Simbolo *id_entry = buscarSimbolo(var_name);
-                                    if (!id_entry) {
-                                        inserirNaTabela(current_scope->symbol_table, var_name, "variable");
-                                        id_entry = buscarSimbolo(var_name);
+                        Simbolo *id_entry = buscarSimbolo(var_name);
+
+                        if (!id_entry) {
+                            // tipo padrão "int"
+                            char *inferred_type_str = "int"; 
+
+                            // tenta inferir o tipo a partir da expressão atribuída ($3)
+                            if ($3 && $3->type == CONST_NODE) {
+                                NoAST_Const *const_node = (NoAST_Const *)$3->data;
+                                if (const_node) {
+                                    switch (const_node->const_type) {
+                                        case TIPO_INT: 
+                                            inferred_type_str = "int"; 
+                                            break;
+                                        case TIPO_FLOAT: 
+                                            inferred_type_str = "float";
+                                            break;
+                                        case TIPO_DOUBLE:
+                                            inferred_type_str = "double";
+                                            break;
+                                        case TIPO_CHAR: 
+                                            inferred_type_str = "char"; 
+                                            break;
+                                        case TIPO_STRING: 
+                                            inferred_type_str = "string";
+                                            break;
+                                        case TIPO_BOOLEAN: 
+                                            inferred_type_str = "boolean";
+                                            break;
+                                        default:
+                                            break; 
                                     }
-                                    $$ = criarNoAssign(id_entry, $3);
-                                    free(var_name); 
                                 }
+                            } 
+                            inserirNaTabela(current_scope->symbol_table, var_name, inferred_type_str);
+                            id_entry = buscarSimbolo(var_name);
+                        }
+                        $$ = criarNoAssign(id_entry, $3);
+                        free(var_name); 
+                    }
     | ID MINUS_ASSIGN expr      {
                                     char *var_name = strdup($1);
                                     if (!var_name) { yyerror("Memory allocation error."); YYABORT; }
@@ -449,13 +512,27 @@ expr:
     | LPAREN expr RPAREN %prec LPAREN_GROUP { $$ = $2; }
     ;
 
+// refatorado
 atom_expr: // pra expressões literais
-    NUM                         { $$ = criarNoConst(TIPO_INT, (Value){.valint = $1}); }
-    | STRING                    { $$ = criarNoConst(TIPO_STRING, (Value){.valstring = strdup($1)}); }
-    | FLOAT_LITERAL             { $$ = criarNoConst(TIPO_DOUBLE, (Value){.valfloat = $1}); }
-    | BOOL_LITERAL              { $$ = criarNoConst(TIPO_BOOLEAN, (Value){.valint = $1}); }
-    | CHAR_LITERAL              { $$ = criarNoConst(TIPO_CHAR, (Value){.valchar = $1}); }
-    ;
+    NUM                     {
+        $$ = criarNoConst(TIPO_INT, (Value){.valint = $1}); // $1 é int_val
+    }
+    | STRING                {
+        char *copied_string = strdup($1); // $1 é string_val
+        if (!copied_string) { yyerror("Erro de alocacao de memoria para string literal."); YYABORT; }
+        $$ = criarNoConst(TIPO_STRING, (Value){.valstring = copied_string});
+    }
+    | FLOAT_LITERAL         {
+        $$ = criarNoConst(TIPO_DOUBLE, (Value){.valfloat = $1}); // $1 é double_val
+    }
+    | BOOL_LITERAL          {
+        $$ = criarNoConst(TIPO_BOOLEAN, (Value){.valint = $1}); // $1 é int_val
+    }
+    | CHAR_LITERAL          {
+        $$ = criarNoConst(TIPO_CHAR, (Value){.valchar = (char)$1}); // $1 é char_val (cast para char)
+    }
+;
+
 
 // call_or_id_expr foi criado para elimitar o shift/reduce q estava sendo
 // causado porque o bison estava enxergando ambiguidades em ID e ID LPAREN
@@ -511,9 +588,31 @@ func_call:
         }
     ;
 
-expr_list: // lista de expressoes (para argumentos de funções)
-    expr                     { $$ = criarNoExprList($1, NULL); }
-    | expr_list COMMA expr   { $$ = criarNoExprList($3, $1); }
+expr_list:
+    expr {
+        $$ = criarNoExprList($1, NULL); 
+        fprintf(stderr, "DEBUG-PARSER: expr_list: Regra base: Expr %p -> No_Expr_List %p\n", (void*)$1, (void*)$$);
+    }
+    | expr_list COMMA expr {
+        NoAST *current_list_node = $1; // current_list_node eh um NoAST* que encapsula No_Expr_List
+        No_Expr_List *current_data = (No_Expr_List *)current_list_node->data;
+        
+        fprintf(stderr, "DEBUG-PARSER: expr_list: Regra recursiva: Lista existente %p (data: %p), Nova expr %p\n",
+                (void*)$1, (void*)current_data, (void*)$3);
+
+        while (current_data->next != NULL) {
+            current_list_node = current_data->next;
+            current_data = (No_Expr_List *)current_list_node->data;
+            fprintf(stderr, "DEBUG-PARSER:   expr_list: Traversing list... current_list_node: %p, current_data: %p\n",
+                    (void*)current_list_node, (void*)current_data);
+        }
+
+        current_data->next = criarNoExprList($3, NULL); 
+        fprintf(stderr, "DEBUG-PARSER:   expr_list: Anexado novo No_Expr_List %p (expr %p) ao final.\n",
+                (void*)current_data->next, (void*)$3);
+
+        $$ = $1;
+    }
     ;
 
 // regras para IF/ELSIF/ELSE
@@ -592,7 +691,7 @@ void yyerror(const char *s) {
 }
 
 int main(int argc, char **argv) {
-    // yydebug = 1;
+    yydebug = 1;
     if (argc > 1) {
         yyin = fopen(argv[1], "r");
         if (!yyin) {
@@ -620,7 +719,7 @@ int main(int argc, char **argv) {
 
     if (!tem_erro && raiz != NULL) {
         printf("\nAnálise Sintática Concluída. AST gerada:\n");
-        imprimirAST(raiz, 0);
+        //imprimirAST(raiz, 0);
         printf("\n");
         imprimirTabelaEscopos();
 
@@ -634,7 +733,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-         // gerarCodigoC(raiz, output_file); // chama a função de geracao de codigo C (não tá completa ainda)
+        gerarCodigoC(raiz, output_file); // chama a função de geracao de codigo C (não tá completa ainda)
 
         fclose(output_file);
         printf("Código C gerado com sucesso em 'output.c'!\n");
