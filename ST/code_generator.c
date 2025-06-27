@@ -534,48 +534,44 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             break;
         }
         case FUNC_DEF_NODE: {
+
             NoAST_FuncDef* func_def = (NoAST_FuncDef*)no->data;
-            if (!func_def || !func_def->func_entry) return; 
-
-            const char* return_c_type = "int"; 
-            if (func_def->func_entry->tipo != NULL) {
-                if (strcmp(func_def->func_entry->tipo, "int") == 0) return_c_type = "int";
-                else if (strcmp(func_def->func_entry->tipo, "float") == 0) return_c_type = "float";
-                else if (strcmp(func_def->func_entry->tipo, "double") == 0) return_c_type = "double";
-                else if (strcmp(func_def->func_entry->tipo, "char") == 0) return_c_type = "char";
-                else if (strcmp(func_def->func_entry->tipo, "string") == 0) return_c_type = "char*";
-                else if (strcmp(func_def->func_entry->tipo, "boolean") == 0) return_c_type = "int";
-                else if (strcmp(func_def->func_entry->tipo, "void") == 0) return_c_type = "void"; 
+            if (!func_def || !func_def->func_entry) {
+                fprintf(stderr, "ERRO: Nó de definição de função malformado.\n");
+                break; 
             }
 
-            fprintf(saida, "%s %s(", return_c_type, func_def->func_entry->nome); 
+            fprintf(saida, "void %s(", func_def->func_entry->nome);
 
-            Parametro* param = func_def->params_list; 
-            int first_param = 1;
-            while (param) {
-                if (!first_param) fprintf(saida, ", ");
-                const char* param_c_type = "int";
-                if (param->tipo != NULL) {
-                    if (strcmp(param->tipo, "int") == 0) param_c_type = "int";
-                    else if (strcmp(param->tipo, "float") == 0) param_c_type = "float";
-                    else if (strcmp(param->tipo, "double") == 0) param_c_type = "double";
-                    else if (strcmp(param->tipo, "char") == 0) param_c_type = "char";
-                    else if (strcmp(param->tipo, "string") == 0) param_c_type = "char*";
-                    else if (strcmp(param->tipo, "boolean") == 0) param_c_type = "int";
+            Parametro* param_iter = func_def->params_list;
+            while (param_iter != NULL) {
+        
+                fprintf(saida, "int %s", param_iter->nome);
+                if (param_iter->prox != NULL) {
+                    fprintf(saida, ", ");
                 }
-                fprintf(saida, "%s %s", param_c_type, param->nome);
-                first_param = 0;
-                param = param->prox; 
+                param_iter = param_iter->prox;
             }
+
             fprintf(saida, ") {\n");
 
             current_indent_level++;
-            clearDeclaredVars(); 
-            gerarStatement(func_def->body, saida); 
+            clearDeclaredVars();
+
+            param_iter = func_def->params_list; 
+            while (param_iter != NULL) {
+                addDeclaredVar(param_iter->nome);
+                param_iter = param_iter->prox;
+            }
+
+            gerarStatement(func_def->body, saida);
+
             current_indent_level--;
-            print_indent(saida); 
+            print_indent(saida);
             fprintf(saida, "}\n\n");
+
             break;
+    break;
         }
         default:
             fprintf(stderr, "Erro na geracao de codigo: Tipo de statement desconhecido ou nao implementado (%s)\n", Node_Type_to_String(no->type)); 
@@ -587,22 +583,49 @@ static void gerarStatement(NoAST *no, FILE *saida) {
 
 // Funcao principal para iniciar a geracao de codigo C
 void gerarCodigoC(NoAST *raiz, FILE *saida) {
+    // --- CABEÇALHOS PADRÃO ---
     fprintf(saida, "#include <stdio.h>\n");
     fprintf(saida, "#include <stdlib.h>\n");
     fprintf(saida, "#include <string.h>\n\n");
 
-    fprintf(saida, "int main() {\n");
-    current_indent_level = 1; 
-
-    clearDeclaredVars(); 
-
-    if (raiz != NULL) {
-        gerarStatement(raiz, saida);
+    // --- PASSADA 1: Gerar as Definições de Funções Globais ---
+    printf("DEBUG: Passada 1 - Gerando definicoes de funcoes...\n");
+    NoAST* no_atual = raiz;
+    // Assumindo que sua AST é uma lista ligada de BASIC_NODE,
+    // onde 'esquerda' é o statement e 'direita' é o resto da lista.
+    while (no_atual != NULL && no_atual->type == BASIC_NODE) {
+        if (no_atual->esquerda && no_atual->esquerda->type == FUNC_DEF_NODE) {
+            gerarStatement(no_atual->esquerda, saida);
+        }
+        no_atual = no_atual->direita;
+    }
+    // Lida com o caso de ser o último/único statement da lista
+    if (no_atual != NULL && no_atual->type == FUNC_DEF_NODE) {
+        gerarStatement(no_atual, saida);
     }
 
+    // --- Gerar a Função `main` ---
+    fprintf(saida, "\nint main(void) {\n");
+    current_indent_level = 1;
+    clearDeclaredVars(); // Limpa as variáveis para o escopo da main
+
+    // --- PASSADA 2: Gerar os Statements que vão DENTRO da main ---
+    printf("DEBUG: Passada 2 - Gerando statements dentro da main...\n");
+    no_atual = raiz;
+    while (no_atual != NULL && no_atual->type == BASIC_NODE) {
+        if (no_atual->esquerda && no_atual->esquerda->type != FUNC_DEF_NODE) {
+            gerarStatement(no_atual->esquerda, saida);
+        }
+        no_atual = no_atual->direita;
+    }
+    // Lida com o caso de ser o último/único statement da lista
+    if (no_atual != NULL && no_atual->type != FUNC_DEF_NODE) {
+        gerarStatement(no_atual, saida);
+    }
+
+    // --- Finaliza a `main` ---
     print_indent(saida);
     fprintf(saida, "return 0;\n");
-    fprintf(saida, "}\n"); 
-
-    clearDeclaredVars(); 
+    current_indent_level = 0;
+    fprintf(saida, "}\n");
 }

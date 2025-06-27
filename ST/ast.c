@@ -209,15 +209,20 @@ NoAST *criarNoFuncDef(Simbolo *symbol_entry, Parametro *parameters, NoAST *body)
     return base_node;
 }
 
-NoAST *criarNoReturn(NoAST *ret_val){
-    NoAST *node = (NoAST *)malloc(sizeof(NoAST));
+NoAST *criarNoReturn(NoAST *ret_val) {
+    NoAST_Return *return_data = (NoAST_Return *)malloc(sizeof(NoAST_Return));
+    if (!return_data) {
+        fprintf(stderr, "Erro de alocação para NoAST_Return\n");
+        exit(EXIT_FAILURE);
+    }
+    return_data->type = RETURN_NODE;
+    return_data->ret_val = ret_val;
+
+    NoAST *base_node = criarNo(RETURN_NODE, NULL, NULL);
     
-    NoAST_Return *v = malloc(sizeof(NoAST_Return));
+    base_node->data = return_data;
 
-    v->type = RETURN_NODE;
-    v->ret_val = ret_val;
-
-    return (struct NoAST *) v;
+    return base_node;
 }
 
 const char* node_type_to_string(Node_Type type) {
