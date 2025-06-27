@@ -39,6 +39,7 @@ $(COMPILER_EXEC):
 		$(BUILD_DIR)/lexer.c \
 		ST/ast.c \
 		ST/tabela.c \
+		ST/code_generator.c \
 		-o $@ $(LDFLAGS)
 
 	@echo "--- Compilador gerado em $@ ---"
