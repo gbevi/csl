@@ -588,28 +588,24 @@ void gerarCodigoC(NoAST *raiz, FILE *saida) {
     fprintf(saida, "#include <stdlib.h>\n");
     fprintf(saida, "#include <string.h>\n\n");
 
-    // --- PASSADA 1: Gerar as Definições de Funções Globais ---
+
     printf("DEBUG: Passada 1 - Gerando definicoes de funcoes...\n");
     NoAST* no_atual = raiz;
-    // Assumindo que sua AST é uma lista ligada de BASIC_NODE,
-    // onde 'esquerda' é o statement e 'direita' é o resto da lista.
+
     while (no_atual != NULL && no_atual->type == BASIC_NODE) {
         if (no_atual->esquerda && no_atual->esquerda->type == FUNC_DEF_NODE) {
             gerarStatement(no_atual->esquerda, saida);
         }
         no_atual = no_atual->direita;
     }
-    // Lida com o caso de ser o último/único statement da lista
+
     if (no_atual != NULL && no_atual->type == FUNC_DEF_NODE) {
         gerarStatement(no_atual, saida);
     }
-
-    // --- Gerar a Função `main` ---
     fprintf(saida, "\nint main(void) {\n");
     current_indent_level = 1;
-    clearDeclaredVars(); // Limpa as variáveis para o escopo da main
+    clearDeclaredVars(); 
 
-    // --- PASSADA 2: Gerar os Statements que vão DENTRO da main ---
     printf("DEBUG: Passada 2 - Gerando statements dentro da main...\n");
     no_atual = raiz;
     while (no_atual != NULL && no_atual->type == BASIC_NODE) {
@@ -618,12 +614,11 @@ void gerarCodigoC(NoAST *raiz, FILE *saida) {
         }
         no_atual = no_atual->direita;
     }
-    // Lida com o caso de ser o último/único statement da lista
+
     if (no_atual != NULL && no_atual->type != FUNC_DEF_NODE) {
         gerarStatement(no_atual, saida);
     }
 
-    // --- Finaliza a `main` ---
     print_indent(saida);
     fprintf(saida, "return 0;\n");
     current_indent_level = 0;
