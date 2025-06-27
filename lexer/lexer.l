@@ -63,6 +63,7 @@ return          { return RETURN; }
 }
 
 
+"=="            { return EQ; }
 "!="            { return NEQ; }
 "<="            { return LE; }
 ">="            { return GE; }

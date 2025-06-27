@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-project",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"clean",
+				"&&",
+				"make",
+				"all"
+			],
+			"group": "build",
+			"isBackground": false
+		}
+	]
+}
