@@ -38,6 +38,7 @@ typedef enum Node_Type {
     FUNC_CALL_NODE, // chamada de função
     EXPR_LIST_NODE, // lista de expressões (para argumentos de funçõs)
     FUNC_DEF_NODE, // definição de função
+    SWITCH_NODE,
     RETURN_NODE,
 }Node_Type;
 

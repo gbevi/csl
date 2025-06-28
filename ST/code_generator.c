@@ -19,7 +19,23 @@ typedef struct DeclaredVar {
     struct DeclaredVar *next;
 } DeclaredVar;
 
-static DeclaredVar *current_c_scope_declared_vars_head = NULL; // Cabeça da lista de vars declaradas no escopo C
+static DeclaredVar *current_c_scope_declared_vars_head = NULL; 
+
+typedef struct NoAST_Case {
+    NoAST *valor;      
+    NoAST *corpo;      
+} NoAST_Case;
+
+typedef struct NoAST_CaseList {
+    NoAST_Case *case_item;
+    struct NoAST_CaseList *next;
+} NoAST_CaseList;
+
+typedef struct NoAST_Switch {
+    NoAST *expr;               
+    NoAST_CaseList *cases;     
+    NoAST *default_case;       
+} NoAST_Switch;
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
 static void addDeclaredVar(const char *name) {
@@ -28,6 +44,22 @@ static void addDeclaredVar(const char *name) {
     new_var->name = strdup(name);
     new_var->next = current_c_scope_declared_vars_head;
     current_c_scope_declared_vars_head = new_var;
+}
+
+const char* Node_Type_to_String(Node_Type type) {
+    switch(type) {
+        case CONST_NODE: return "CONST_NODE";
+        case ID_NODE: return "ID_NODE";
+        case ASSIGN_NODE: return "ASSIGN_NODE";
+        case REL_OP_NODE: return "REL_OP_NODE";
+        case ARITHM_NODE: return "ARITHM_NODE";
+        case RETURN_NODE: return "RETURN_NODE";
+        case FOR_HEADER_NODE: return "FOR_HEADER_NODE";
+        case FUNC_DEF_NODE: return "FUNC_DEF_NODE";
+        case BASIC_NODE: return "BASIC_NODE";
+        // Adicione os outros tipos que usar
+        default: return "UNKNOWN_NODE_TYPE";
+    }
 }
 
 // limpa a lista de variáveis declaradas para o escopo C atual
@@ -531,6 +563,48 @@ static void gerarStatement(NoAST *no, FILE *saida) {
                 gerarExpressao(ret_node->ret_val, saida); 
             }
             fprintf(saida, ";\n");
+            break;
+        }
+        case SWITCH_NODE: {
+            NoAST_Switch *switch_node = (NoAST_Switch *)no->data;
+            if (!switch_node) return;
+
+            print_indent(saida);
+            fprintf(saida, "switch (");
+            gerarExpressao(switch_node->expr, saida);
+            fprintf(saida, ") {\n");
+            current_indent_level++;
+
+            NoAST_CaseList *case_list = switch_node->cases;
+            while (case_list) {
+                NoAST_Case *case_item = case_list->case_item;
+                if (case_item && case_item->valor) {
+                    print_indent(saida);
+                    fprintf(saida, "case ");
+                    gerarExpressao(case_item->valor, saida);
+                    fprintf(saida, ":\n");
+                    current_indent_level++;
+                    gerarStatement(case_item->corpo, saida);
+                    print_indent(saida);
+                    fprintf(saida, "break;\n");
+                    current_indent_level--;
+                }
+                case_list = case_list->next;
+            }
+
+            if (switch_node->default_case) {
+                print_indent(saida);
+                fprintf(saida, "default:\n");
+                current_indent_level++;
+                gerarStatement(switch_node->default_case, saida);
+                print_indent(saida);
+                fprintf(saida, "break;\n");
+                current_indent_level--;
+            }
+
+            current_indent_level--;
+            print_indent(saida);
+            fprintf(saida, "}\n");
             break;
         }
         case FUNC_DEF_NODE: {
