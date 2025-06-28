@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 
 // funcao auxiliar para converter Node_Type para string (para avisos)
 extern const char* Node_Type_to_String(Node_Type type);
@@ -21,21 +22,6 @@ typedef struct DeclaredVar {
 
 static DeclaredVar *current_c_scope_declared_vars_head = NULL; 
 
-typedef struct NoAST_Case {
-    NoAST *valor;      
-    NoAST *corpo;      
-} NoAST_Case;
-
-typedef struct NoAST_CaseList {
-    NoAST_Case *case_item;
-    struct NoAST_CaseList *next;
-} NoAST_CaseList;
-
-typedef struct NoAST_Switch {
-    NoAST *expr;               
-    NoAST_CaseList *cases;     
-    NoAST *default_case;       
-} NoAST_Switch;
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
 static void addDeclaredVar(const char *name) {
@@ -46,37 +32,6 @@ static void addDeclaredVar(const char *name) {
     current_c_scope_declared_vars_head = new_var;
 }
 
-NoAST* criarNoSwitch(NoAST* expr, NoAST* case_list, NoAST* default_case);
-NoAST* criarNoCase(int val, NoAST* stmt);
-void adicionarCase(NoAST* lista, NoAST* novo_case);
-
-typedef struct NoAST_Case {
-    int case_value;
-    struct NoAST *stmt;
-    struct NoAST_Case *next_case;
-} NoAST_Case;
-
-typedef struct NoAST_Switch {
-    struct NoAST *expr;            
-    NoAST_Case *case_list;         
-    struct NoAST *default_case;   
-} NoAST_Switch;
-
-const char* Node_Type_to_String(Node_Type type) {
-    switch(type) {
-        case CONST_NODE: return "CONST_NODE";
-        case ID_NODE: return "ID_NODE";
-        case ASSIGN_NODE: return "ASSIGN_NODE";
-        case REL_OP_NODE: return "REL_OP_NODE";
-        case ARITHM_NODE: return "ARITHM_NODE";
-        case RETURN_NODE: return "RETURN_NODE";
-        case FOR_HEADER_NODE: return "FOR_HEADER_NODE";
-        case FUNC_DEF_NODE: return "FUNC_DEF_NODE";
-        case BASIC_NODE: return "BASIC_NODE";
-        // Adicione os outros tipos que usar
-        default: return "UNKNOWN_NODE_TYPE";
-    }
-}
 
 // limpa a lista de variáveis declaradas para o escopo C atual
 static void clearDeclaredVars() {
@@ -584,25 +539,40 @@ static void gerarStatement(NoAST *no, FILE *saida) {
         case SWITCH_NODE: {
             NoAST_Switch* s = (NoAST_Switch*) no->data;
 
+            // imprime o switch
+            print_indent(saida);
             fprintf(saida, "switch (");
-            gerarCodigoC(s->expr, saida);
+            gerarExpressao(s->expr, saida);    // <— gera só a expressão, não todo o programa
             fprintf(saida, ") {\n");
+            current_indent_level++;
 
-            NoAST* c = s->case_list;
+            // imprime cada case
+            NoAST_Case* c = s->case_list;
             while (c) {
-                NoAST_Case* cc = (NoAST_Case*) c->data;
-                fprintf(saida, "case %d:\n", cc->case_value);
-                gerarCodigoC(cc->stmt, saida);
-                // Se quiser colocar break:
-                // fprintf(saida, "break;\n");
-                c = cc->next_case;
+                print_indent(saida);
+                fprintf(saida, "case %d:\n", c->case_value);
+                current_indent_level++;
+                gerarStatement(c->stmt, saida); // <— gera só o statement (return, atribuição, ...)
+                print_indent(saida);
+                fprintf(saida, "break;\n");
+                current_indent_level--;
+                c = c->next_case;
             }
 
+            // imprime o default, se existir
             if (s->default_case) {
+                print_indent(saida);
                 fprintf(saida, "default:\n");
-                gerarCodigoC(s->default_case, saida);
+                current_indent_level++;
+                gerarStatement(s->default_case, saida);
+                print_indent(saida);
+                fprintf(saida, "break;\n");
+                current_indent_level--;
             }
 
+            // fecha o switch
+            current_indent_level--;
+            print_indent(saida);
             fprintf(saida, "}\n");
             break;
         }

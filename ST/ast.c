@@ -17,6 +17,42 @@ NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita){
     return v;
 }
 
+NoAST_Case* criarNoCase(int case_value, NoAST* stmt) {
+    NoAST_Case* new_case = malloc(sizeof(NoAST_Case));
+    new_case->case_value = case_value;
+    new_case->stmt = stmt;
+    new_case->next_case = NULL;
+    return new_case;
+}
+
+void adicionarCase(NoAST_Case** head, NoAST_Case* new_case) {
+    if (*head == NULL) {
+        *head = new_case;
+    } else {
+        NoAST_Case* current = *head;
+        while (current->next_case != NULL) {
+            current = current->next_case;
+        }
+        current->next_case = new_case;
+    }
+}
+
+NoAST* criarNoSwitch(NoAST* expr, NoAST_Case* cases, NoAST* default_stmt) {
+    NoAST_Switch* switch_node = malloc(sizeof(NoAST_Switch));
+    switch_node->expr = expr;
+    switch_node->case_list = cases;
+    switch_node->default_case = default_stmt;
+
+    NoAST* node = malloc(sizeof(NoAST));
+    node->type = SWITCH_NODE;
+    node->esquerda = NULL;
+    node->direita = NULL;
+    node->data = switch_node;
+    node->simbolo = NULL;
+
+    return node;
+}
+
 NoAST* criarNoConst(DataType const_type, Value val) {
     NoAST_Const *const_node = (NoAST_Const *)malloc(sizeof(NoAST_Const));
     const_node->const_type = const_type;
@@ -445,18 +481,16 @@ void imprimirAST(NoAST *node, int indent) {
 
 const char* Node_Type_to_String(Node_Type type) {
     switch(type) {
-        case BASIC_NODE: return "BASIC_NODE";
-        case ID_NODE: return "ID_NODE";
         case CONST_NODE: return "CONST_NODE";
+        case ID_NODE: return "ID_NODE";
         case ASSIGN_NODE: return "ASSIGN_NODE";
-        case ARITHM_NODE: return "ARITHM_NODE";
-        case LOGIC_OP_NODE: return "LOGIC_OP_NODE";
         case REL_OP_NODE: return "REL_OP_NODE";
-        case IF_NODE: return "IF_NODE";
-        case ELSIF_NODE: return "ELSIF_NODE";
-        case ELSE_NODE: return "ELSE_NODE";
-        case FOR_IN_NODE: return "FOR_IN_NODE";
-        // Adicione outros casos conforme for testando
-        default: return "UNKNOWN_NODE";
+        case ARITHM_NODE: return "ARITHM_NODE";
+        case RETURN_NODE: return "RETURN_NODE";
+        case FOR_HEADER_NODE: return "FOR_HEADER_NODE";
+        case FUNC_DEF_NODE: return "FUNC_DEF_NODE";
+        case BASIC_NODE: return "BASIC_NODE";
+        // Adicione os outros tipos que usar
+        default: return "UNKNOWN_NODE_TYPE";
     }
 }
