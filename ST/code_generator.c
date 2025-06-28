@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 
 // funcao auxiliar para converter Node_Type para string (para avisos)
 extern const char *Node_Type_to_String(Node_Type type);
@@ -20,7 +21,8 @@ typedef struct DeclaredVar
     struct DeclaredVar *next;
 } DeclaredVar;
 
-static DeclaredVar *current_c_scope_declared_vars_head = NULL; // Cabeça da lista de vars declaradas no escopo C
+static DeclaredVar *current_c_scope_declared_vars_head = NULL; 
+
 
 // adiciona uma variável a lista de variáveis declaradas para o escopo C atual
 static void addDeclaredVar(const char *name)
@@ -35,6 +37,7 @@ static void addDeclaredVar(const char *name)
     new_var->next = current_c_scope_declared_vars_head;
     current_c_scope_declared_vars_head = new_var;
 }
+
 
 // limpa a lista de variáveis declaradas para o escopo C atual
 static void clearDeclaredVars()
@@ -714,6 +717,48 @@ static void gerarStatement(NoAST *no, FILE *saida)
             fprintf(stderr, "ERRO: Nó de definição de função malformado.\n");
             break;
         }
+   switch_case
+        case SWITCH_NODE: {
+            NoAST_Switch* s = (NoAST_Switch*) no->data;
+
+            // imprime o switch
+            print_indent(saida);
+            fprintf(saida, "switch (");
+            gerarExpressao(s->expr, saida);    // <— gera só a expressão, não todo o programa
+            fprintf(saida, ") {\n");
+            current_indent_level++;
+
+            // imprime cada case
+            NoAST_Case* c = s->case_list;
+            while (c) {
+                print_indent(saida);
+                fprintf(saida, "case %d:\n", c->case_value);
+                current_indent_level++;
+                gerarStatement(c->stmt, saida); // <— gera só o statement (return, atribuição, ...)
+                print_indent(saida);
+                fprintf(saida, "break;\n");
+                current_indent_level--;
+                c = c->next_case;
+            }
+
+            // imprime o default, se existir
+            if (s->default_case) {
+                print_indent(saida);
+                fprintf(saida, "default:\n");
+                current_indent_level++;
+                gerarStatement(s->default_case, saida);
+                print_indent(saida);
+                fprintf(saida, "break;\n");
+                current_indent_level--;
+            }
+
+            // fecha o switch
+            current_indent_level--;
+            print_indent(saida);
+            fprintf(saida, "}\n");
+            break;
+        }
+        case FUNC_DEF_NODE: {
 
         fprintf(saida, "void %s(", func_def->func_entry->nome);
 

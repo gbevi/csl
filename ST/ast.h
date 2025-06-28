@@ -38,6 +38,7 @@ typedef enum Node_Type {
     FUNC_CALL_NODE, // chamada de função
     EXPR_LIST_NODE, // lista de expressões (para argumentos de funçõs)
     FUNC_DEF_NODE, // definição de função
+    SWITCH_NODE,
     RETURN_NODE,
 }Node_Type;
 
@@ -180,6 +181,18 @@ typedef struct NoAST_Return{
 	struct NoAST *ret_val;
 }NoAST_Return;
 
+typedef struct NoAST_Case {
+    int case_value;
+    struct NoAST *stmt;
+    struct NoAST_Case *next_case;
+} NoAST_Case;
+
+typedef struct NoAST_Switch {
+    struct NoAST *expr;            
+    NoAST_Case *case_list;         
+    struct NoAST *default_case;   
+} NoAST_Switch;
+
 NoAST *criarNo(Node_Type type, NoAST *esquerda, NoAST *direita);
 
 NoAST *criarNoConst(DataType const_type, Value val);
@@ -218,6 +231,11 @@ void imprimirAST(NoAST *node, int indent);
 NoAST** convert_sequence_to_array(NoAST *sequence_node, int *count);
 
 const char* Node_Type_to_String(Node_Type type);
+
+NoAST* criarNoSwitch(NoAST* expr, NoAST_Case* cases, NoAST* default_stmt);
+NoAST_Case* criarNoCase(int case_value, NoAST* stmt);
+void adicionarCase(NoAST_Case** head, NoAST_Case* new_case);
+NoAST* criarNoReturn(NoAST* expr);
 
 
 #endif
