@@ -1,9 +1,7 @@
-for item in 0..5 do
-  puts(item)
-end
 
 i = 0
 while i < 3 do
   puts(i)
   i = i + 1
 end
+

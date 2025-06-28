@@ -8,6 +8,6 @@ void soma(int a, int b) {
 
 
 int main(void) {
-    soma(1);
+    int resultado_soma = soma(10);
     return 0;
 }

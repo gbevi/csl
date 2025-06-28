@@ -490,7 +490,6 @@ const char* Node_Type_to_String(Node_Type type) {
         case FOR_HEADER_NODE: return "FOR_HEADER_NODE";
         case FUNC_DEF_NODE: return "FUNC_DEF_NODE";
         case BASIC_NODE: return "BASIC_NODE";
-        // Adicione os outros tipos que usar
         default: return "UNKNOWN_NODE_TYPE";
     }
 }

@@ -719,7 +719,7 @@ int main(int argc, char **argv) {
 
     if (!tem_erro && raiz != NULL) {
         printf("\nAnálise Sintática Concluída. AST gerada:\n");
-        //imprimirAST(raiz, 0);
+        imprimirAST(raiz, 0);
         printf("\n");
         imprimirTabelaEscopos();
 
