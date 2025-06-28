@@ -2,71 +2,52 @@
 #include <stdlib.h>
 #include <string.h>
 
-// --- Enum e structs simplificadas para o teste ---
-
+// Tipos simplificados para o teste
 typedef enum {
     CONST_NODE,
     ID_NODE,
-    ASSIGN_NODE,
     SWITCH_NODE,
-    CASE_LIST_NODE,
     CASE_NODE,
-    DEFAULT_NODE,
     RETURN_NODE,
-    BASIC_NODE
 } NoAST_Type;
 
-typedef enum {
-    TIPO_INT,
-} TipoConst;
-
-typedef union {
-    int valint;
-} Value;
+typedef struct NoAST {
+    NoAST_Type type;
+    void *data;
+    struct NoAST *esquerda; // geralmente usado para lista, filho, etc
+    struct NoAST *direita;  // idem
+} NoAST;
 
 typedef struct {
-    TipoConst const_type;
-    Value val;
+    int val;
 } NoAST_Const;
 
 typedef struct {
     char *name;
 } NoAST_Id;
 
-typedef struct Simbolo {
-    char nome[64];
-} Simbolo;
-
-typedef struct NoAST {
-    NoAST_Type type;
-    void *data;
-    struct NoAST *esquerda;
-    struct NoAST *direita;
-} NoAST;
-
 typedef struct {
-    NoAST *expr;  // expressão a ser avaliada no case
-    NoAST *corpo; // corpo do case (statements)
-} NoAST_Case;
-
-typedef struct NoAST_CaseList {
-    NoAST_Case *case_item;
-    struct NoAST_CaseList *next;
-} NoAST_CaseList;
-
-typedef struct {
-    NoAST *expr;            // expressão do switch
-    NoAST_CaseList *cases;  // lista ligada de cases
-    NoAST *default_case;    // default case
+    NoAST *expr;       // expressão do switch
+    NoAST *case_list;  // lista ligada de cases
+    NoAST *default_case; // case default (pode ser NULL)
 } NoAST_Switch;
 
-// --- Funções para criar nós ---
+typedef struct {
+    int case_value;  // valor do case
+    NoAST *stmt;     // statement dentro do case
+    struct NoAST *next_case; // próximo case na lista
+} NoAST_Case;
 
-NoAST* criarNoConstInt(int v) {
-    NoAST *no = malloc(sizeof(NoAST));
-    NoAST_Const *c = malloc(sizeof(NoAST_Const));
-    c->const_type = TIPO_INT;
-    c->val.valint = v;
+typedef struct {
+    NoAST *ret_expr; // expressão do return
+} NoAST_Return;
+
+// Funções para criar nós
+
+NoAST* criarNoConst(int val) {
+    NoAST* no = malloc(sizeof(NoAST));
+    NoAST_Const* c = malloc(sizeof(NoAST_Const));
+    c->val = val;
     no->type = CONST_NODE;
     no->data = c;
     no->esquerda = NULL;
@@ -74,83 +55,123 @@ NoAST* criarNoConstInt(int v) {
     return no;
 }
 
-NoAST* criarNoReturn(NoAST *expr) {
-    NoAST *no = malloc(sizeof(NoAST));
+NoAST* criarNoReturn(NoAST* expr) {
+    NoAST* no = malloc(sizeof(NoAST));
+    NoAST_Return* r = malloc(sizeof(NoAST_Return));
+    r->ret_expr = expr;
     no->type = RETURN_NODE;
-    no->data = expr; // neste teste, só guardamos a expressão diretamente
+    no->data = r;
     no->esquerda = NULL;
     no->direita = NULL;
     return no;
 }
 
-NoAST_Case* criarCase(NoAST *expr, NoAST *corpo) {
-    NoAST_Case *c = malloc(sizeof(NoAST_Case));
-    c->expr = expr;
-    c->corpo = corpo;
-    return c;
-}
-
-NoAST_CaseList* adicionarCase(NoAST_CaseList *lista, NoAST_Case *novo_case) {
-    NoAST_CaseList *no = malloc(sizeof(NoAST_CaseList));
-    no->case_item = novo_case;
-    no->next = lista;
+NoAST* criarNoCase(int val, NoAST* stmt) {
+    NoAST* no = malloc(sizeof(NoAST));
+    NoAST_Case* c = malloc(sizeof(NoAST_Case));
+    c->case_value = val;
+    c->stmt = stmt;
+    c->next_case = NULL;
+    no->type = CASE_NODE;
+    no->data = c;
+    no->esquerda = NULL;
+    no->direita = NULL;
     return no;
 }
 
-NoAST* criarSwitch(NoAST *expr, NoAST_CaseList *cases, NoAST *default_case) {
-    NoAST *no = malloc(sizeof(NoAST));
-    NoAST_Switch *swt = malloc(sizeof(NoAST_Switch));
-    swt->expr = expr;
-    swt->cases = cases;
-    swt->default_case = default_case;
+NoAST* criarNoSwitch(NoAST* expr, NoAST* case_list, NoAST* default_case) {
+    NoAST* no = malloc(sizeof(NoAST));
+    NoAST_Switch* s = malloc(sizeof(NoAST_Switch));
+    s->expr = expr;
+    s->case_list = case_list;
+    s->default_case = default_case;
     no->type = SWITCH_NODE;
-    no->data = swt;
+    no->data = s;
     no->esquerda = NULL;
     no->direita = NULL;
     return no;
 }
 
-// --- Protótipos ---
+// Função simples para concatenar cases na lista ligada
+void adicionarCase(NoAST* lista, NoAST* novo_case) {
+    if (!lista) return;
+    NoAST_Case* c = (NoAST_Case*)lista->data;
+    NoAST* atual = lista;
+    while (c->next_case) {
+        atual = c->next_case;
+        c = (NoAST_Case*)atual->data;
+    }
+    c->next_case = novo_case;
+}
 
-void gerarCodigoC(NoAST *raiz, FILE *saida); // sua implementação real
+// Função de geração de código simplificada para teste
 
-// --- main do teste ---
+void gerarStatement(NoAST* no) {
+    if (!no) return;
+    switch(no->type) {
+        case CONST_NODE: {
+            NoAST_Const* c = (NoAST_Const*)no->data;
+            printf("%d", c->val);
+            break;
+        }
+        case RETURN_NODE: {
+            NoAST_Return* r = (NoAST_Return*)no->data;
+            printf("return ");
+            gerarStatement(r->ret_expr);
+            printf(";\n");
+            break;
+        }
+        case CASE_NODE: {
+            NoAST_Case* c = (NoAST_Case*)no->data;
+            printf("case %d:\n", c->case_value);
+            gerarStatement(c->stmt);
+            break;
+        }
+        case SWITCH_NODE: {
+            NoAST_Switch* s = (NoAST_Switch*)no->data;
+            printf("switch (");
+            gerarStatement(s->expr);
+            printf(") {\n");
+
+            // Cases
+            NoAST* c = s->case_list;
+            while (c) {
+                gerarStatement(c);
+                NoAST_Case* cc = (NoAST_Case*)c->data;
+                c = cc->next_case;
+            }
+
+            // Default
+            if (s->default_case) {
+                printf("default:\n");
+                gerarStatement(s->default_case);
+            }
+            printf("}\n");
+            break;
+        }
+        default:
+            printf("/* nó não tratado */\n");
+    }
+}
 
 int main() {
-    // Criar expressão do switch: switch(x)
-    Simbolo sym_x;
-    strcpy(sym_x.nome, "x");
-    NoAST_Id *id_x = malloc(sizeof(NoAST_Id));
-    id_x->name = sym_x.nome;
+    // construir a AST do switch
 
-    NoAST *expr_x = malloc(sizeof(NoAST));
-    expr_x->type = ID_NODE;
-    expr_x->data = id_x;
-    expr_x->esquerda = NULL;
-    expr_x->direita = NULL;
+    NoAST* expr = criarNoConst(1);  // switch(1)
 
-    // Criar cases:
-    // case 1: return 1;
-    NoAST *ret1 = criarNoReturn(criarNoConstInt(1));
-    NoAST_Case *case1 = criarCase(criarNoConstInt(1), ret1);
+    NoAST* case1 = criarNoCase(1, criarNoReturn(criarNoConst(1)));
+    NoAST* case2 = criarNoCase(2, criarNoReturn(criarNoConst(2)));
+    // liga os cases na lista
+    adicionarCase(case1, case2);
 
-    // case 2: return 2;
-    NoAST *ret2 = criarNoReturn(criarNoConstInt(2));
-    NoAST_Case *case2 = criarCase(criarNoConstInt(2), ret2);
+    NoAST* default_case = criarNoReturn(criarNoConst(0));
 
-    // default: return 0;
-    NoAST *ret0 = criarNoReturn(criarNoConstInt(0));
+    NoAST* switch_node = criarNoSwitch(expr, case1, default_case);
 
-    // Lista ligada dos cases (adiciona à lista para ficar na ordem correta)
-    NoAST_CaseList *cases = NULL;
-    cases = adicionarCase(cases, case2);
-    cases = adicionarCase(cases, case1);
+    // gerar código
+    gerarStatement(switch_node);
 
-    // Criar nó switch
-    NoAST *switch_node = criarSwitch(expr_x, cases, ret0);
-
-    // Gerar código (sua implementação deve suportar SWITCH_NODE)
-    gerarCodigoC(switch_node, stdout);
+    // liberar memória omitido
 
     return 0;
 }

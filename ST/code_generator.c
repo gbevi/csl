@@ -46,6 +46,22 @@ static void addDeclaredVar(const char *name) {
     current_c_scope_declared_vars_head = new_var;
 }
 
+NoAST* criarNoSwitch(NoAST* expr, NoAST* case_list, NoAST* default_case);
+NoAST* criarNoCase(int val, NoAST* stmt);
+void adicionarCase(NoAST* lista, NoAST* novo_case);
+
+typedef struct NoAST_Case {
+    int case_value;
+    struct NoAST *stmt;
+    struct NoAST_Case *next_case;
+} NoAST_Case;
+
+typedef struct NoAST_Switch {
+    struct NoAST *expr;            
+    NoAST_Case *case_list;         
+    struct NoAST *default_case;   
+} NoAST_Switch;
+
 const char* Node_Type_to_String(Node_Type type) {
     switch(type) {
         case CONST_NODE: return "CONST_NODE";
@@ -566,44 +582,27 @@ static void gerarStatement(NoAST *no, FILE *saida) {
             break;
         }
         case SWITCH_NODE: {
-            NoAST_Switch *switch_node = (NoAST_Switch *)no->data;
-            if (!switch_node) return;
+            NoAST_Switch* s = (NoAST_Switch*) no->data;
 
-            print_indent(saida);
             fprintf(saida, "switch (");
-            gerarExpressao(switch_node->expr, saida);
+            gerarCodigoC(s->expr, saida);
             fprintf(saida, ") {\n");
-            current_indent_level++;
 
-            NoAST_CaseList *case_list = switch_node->cases;
-            while (case_list) {
-                NoAST_Case *case_item = case_list->case_item;
-                if (case_item && case_item->valor) {
-                    print_indent(saida);
-                    fprintf(saida, "case ");
-                    gerarExpressao(case_item->valor, saida);
-                    fprintf(saida, ":\n");
-                    current_indent_level++;
-                    gerarStatement(case_item->corpo, saida);
-                    print_indent(saida);
-                    fprintf(saida, "break;\n");
-                    current_indent_level--;
-                }
-                case_list = case_list->next;
+            NoAST* c = s->case_list;
+            while (c) {
+                NoAST_Case* cc = (NoAST_Case*) c->data;
+                fprintf(saida, "case %d:\n", cc->case_value);
+                gerarCodigoC(cc->stmt, saida);
+                // Se quiser colocar break:
+                // fprintf(saida, "break;\n");
+                c = cc->next_case;
             }
 
-            if (switch_node->default_case) {
-                print_indent(saida);
+            if (s->default_case) {
                 fprintf(saida, "default:\n");
-                current_indent_level++;
-                gerarStatement(switch_node->default_case, saida);
-                print_indent(saida);
-                fprintf(saida, "break;\n");
-                current_indent_level--;
+                gerarCodigoC(s->default_case, saida);
             }
 
-            current_indent_level--;
-            print_indent(saida);
             fprintf(saida, "}\n");
             break;
         }
