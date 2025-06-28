@@ -2,15 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+void soma(int a, int b) {
+    return (a + b);
+}
+
 
 int main(void) {
-    for (int item = 0; item <= 5; item++) {
-        printf("%d\n", item);
-    }
-    int i = 0;
-    while ((i < 3)) {
-        printf("%d\n", i);
-        i = (i + 1);
-    }
+    soma(1, 2);
     return 0;
 }

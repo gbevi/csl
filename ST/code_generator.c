@@ -241,11 +241,9 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
 
             No_Expr_List* arg_list_head = call_node->args_list_head; 
 
-            // tratamento unificado para built-ins puts e print
             if (strcmp(call_node->entry->nome, "puts") == 0 || strcmp(call_node->entry->nome, "print") == 0) {
                 fprintf(saida, "printf(");
                 
-                // primeira passada: gera a string de formato (ex: "%%d %%lf %%s")
                 fprintf(saida, "\""); 
                 int first_format_specifier_added = 1;
                 No_Expr_List* temp_iter_format = arg_list_head; 
@@ -258,9 +256,9 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
                             (void*)temp_iter_format, (void*)temp_iter_format->expr, (void*)temp_iter_format->next);
                     fflush(stderr);
 
-                    if (temp_iter_format->expr) { // somente adiciona formato se a expressao existe
+                    if (temp_iter_format->expr) { 
                         if (!first_format_specifier_added) {
-                            fprintf(saida, " "); // adiciona espaço entre os especificadores
+                            fprintf(saida, " "); 
                         }
                         const char* spec = get_c_format_specifier(temp_iter_format->expr);
                         fprintf(saida, "%s", spec);
@@ -274,18 +272,16 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
                     temp_iter_format = (No_Expr_List*)temp_iter_format->next;
                 }
 
-                // adiciona nova linha se for 'puts' ou fecha a string de formato para 'print'
                 if (strcmp(call_node->entry->nome, "puts") == 0) {
                     fprintf(saida, "\\n\""); 
                     fprintf(stderr, "DEBUG-CG:   Added newline to format for puts.\n");
                     fflush(stderr);
-                } else { // for 'print'
+                } else { 
                     fprintf(saida, "\""); 
                     fprintf(stderr, "DEBUG-CG:   Closing format for print.\n");
                     fflush(stderr);
                 }
                 
-                // SEGUNDA PARTE: gerar os valores das expressões (argumentos reais do printf)
                 int first_value_added = 1;
                 No_Expr_List* temp_iter_value = arg_list_head; 
                 fprintf(stderr, "DEBUG-CG: Gerando valores para %s. arg_list_head: %p\n", call_node->entry->nome, (void*)arg_list_head);
@@ -296,7 +292,7 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
                             (void*)temp_iter_value, (void*)temp_iter_value->expr, (void*)temp_iter_value->next);
                     fflush(stderr);
 
-                    if (temp_iter_value->expr) { // somente adiciona valor se a expressao existe
+                    if (temp_iter_value->expr) { 
                         if (first_value_added) {
                             fprintf(saida, ", "); 
                             fprintf(stderr, "DEBUG-CG:     Added initial comma for values.\n");
@@ -343,22 +339,31 @@ static void gerarExpressao(NoAST *no, FILE *saida) {
                     fprintf(saida, "/* ERRO_SCAN_INVALIDO */");
                 }
             }
-            else { // funcoes definidas pelo usuario
+            else { 
                 fprintf(saida, "%s(", call_node->entry->nome);
-                No_Expr_List* current_arg_list_node = (No_Expr_List*)call_node->args_list_head; 
+
+                No_Expr_List* current_arg_data = call_node->args_list_head;
                 int first_arg = 1;
-                while (current_arg_list_node) {
-                    if (!current_arg_list_node->expr) { 
-                        current_arg_list_node = (No_Expr_List*)current_arg_list_node->next;
-                        continue; 
+
+                while (current_arg_data) {
+                    if (!first_arg) {
+                        fprintf(saida, ", ");
                     }
-                    if (!first_arg) fprintf(saida, ", ");
-                    gerarExpressao(current_arg_list_node->expr, saida);
+
+                    if (current_arg_data->expr) {
+                        gerarExpressao(current_arg_data->expr, saida);
+                    }
                     first_arg = 0;
-                    current_arg_list_node = (No_Expr_List*)current_arg_list_node->next;
+
+                    NoAST* next_container = current_arg_data->next;
+                    if (next_container) {
+                        current_arg_data = (No_Expr_List*)next_container->data;
+                    } else {
+                        current_arg_data = NULL;
+                    }
                 }
                 fprintf(saida, ")");
-            }
+}
             break;
         }
         case EXPR_LIST_NODE: { 
